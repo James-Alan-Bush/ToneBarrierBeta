@@ -88,27 +88,30 @@ static void (^observe_notifications)(NSArray<notification> *) = ^ (NSArray<notif
 static void (^setup_audio_session)(void) = ^{
 //    static AVAudioSession * session;
 //    session = [AVAudioSession sharedInstance];
-    
+    __block NSError *error = nil;
+    static void (^display_error)(NSError ** error_t) = ^ (NSError ** error_t) {
+        printf("Error configuring audio session:\n\t%s\n", [[*error_t localizedFailureReason] UTF8String]);
+        NSException* exception = [NSException
+                                  exceptionWithName:(*error_t).domain
+                                  reason:(*error_t).localizedDescription
+                                  userInfo:@{@"Error Code" : @((*error_t).code)}];
+        @throw exception;
+    };
     @try {
-        __autoreleasing NSError *error = nil;
         [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord mode:AVAudioSessionModeDefault options:AVAudioSessionCategoryOptionAllowAirPlay | AVAudioSessionCategoryOptionDefaultToSpeaker error:&error];
+        !(error) ?: display_error(&error);
         [[AVAudioSession sharedInstance] setSupportsMultichannelContent:TRUE  error:&error];
-        [[AVAudioSession sharedInstance] setPreferredInputNumberOfChannels:2  error:&error];
-        [[AVAudioSession sharedInstance] setPreferredOutputNumberOfChannels:2 error:&error];
+        !(error) ?: display_error(&error);
+        [[AVAudioSession sharedInstance] setPreferredInputNumberOfChannels:4  error:&error];
+        !(error) ?: display_error(&error);
+        [[AVAudioSession sharedInstance] setPreferredOutputNumberOfChannels:4 error:&error];
+        !(error) ?: display_error(&error);
         [[AVAudioSession sharedInstance] setPrefersNoInterruptionsFromSystemAlerts:TRUE error:&error]; // TO-DO: Make this a user-specified preference
-        
-        !(!error) ?: ^ (NSError ** error_t) {
-            printf("Error configuring audio session:\n\t%s\n", [[*error_t debugDescription] UTF8String]);
-            NSException* exception = [NSException
-                                      exceptionWithName:(*error_t).domain
-                                      reason:(*error_t).localizedDescription
-                                      userInfo:@{@"Error Code" : @((*error_t).code)}];
-            @throw exception;
-        }(&error);
+        !(error) ?: display_error(&error);
     } @catch (NSException *exception) {
         printf("Exception configuring audio session:\n\t%s\n\t%s\n\t%lu",
                [exception.name UTF8String],
-               [exception.reason UTF8String],
+               [exception.debugDescription UTF8String],
                ((NSNumber *)[exception.userInfo valueForKey:@"Error Code"]).unsignedIntegerValue);
     } @finally {
         // Setup notifications
