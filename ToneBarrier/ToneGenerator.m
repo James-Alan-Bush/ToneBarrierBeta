@@ -86,10 +86,8 @@ static void (^observe_notifications)(NSArray<notification> *) = ^ (NSArray<notif
 //        It should return another block that, when executed, removes the notification observer
 
 static void (^setup_audio_session)(void) = ^{
-//    static AVAudioSession * session;
-//    session = [AVAudioSession sharedInstance];
     __block NSError *error = nil;
-    static void (^display_error)(NSError ** error_t) = ^ (NSError ** error_t) {
+    static void (^throw_exception_with_error)(NSError ** error_t) = ^ (NSError ** error_t) {
         printf("Error configuring audio session:\n\t%s\n", [[*error_t localizedFailureReason] UTF8String]);
         NSException* exception = [NSException
                                   exceptionWithName:(*error_t).domain
@@ -97,17 +95,18 @@ static void (^setup_audio_session)(void) = ^{
                                   userInfo:@{@"Error Code" : @((*error_t).code)}];
         @throw exception;
     };
+    
     @try {
         [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord mode:AVAudioSessionModeDefault options:AVAudioSessionCategoryOptionAllowAirPlay | AVAudioSessionCategoryOptionDefaultToSpeaker error:&error];
-        !(error) ?: display_error(&error);
+//        !(error) ?: display_error(&error);
         [[AVAudioSession sharedInstance] setSupportsMultichannelContent:TRUE  error:&error];
-        !(error) ?: display_error(&error);
-        [[AVAudioSession sharedInstance] setPreferredInputNumberOfChannels:4  error:&error];
-        !(error) ?: display_error(&error);
-        [[AVAudioSession sharedInstance] setPreferredOutputNumberOfChannels:4 error:&error];
-        !(error) ?: display_error(&error);
+//        !(error) ?: display_error(&error);
+        [[AVAudioSession sharedInstance] setPreferredInputNumberOfChannels:2  error:&error];
+//        !(error) ?: display_error(&error);
+        [[AVAudioSession sharedInstance] setPreferredOutputNumberOfChannels:2 error:&error];
+//        !(error) ?: display_error(&error);
         [[AVAudioSession sharedInstance] setPrefersNoInterruptionsFromSystemAlerts:TRUE error:&error]; // TO-DO: Make this a user-specified preference
-        !(error) ?: display_error(&error);
+//        !(error) ?: display_error(&error);
     } @catch (NSException *exception) {
         printf("Exception configuring audio session:\n\t%s\n\t%s\n\t%lu",
                [exception.name UTF8String],
@@ -337,15 +336,15 @@ NSArray<NSDictionary<NSString *, id> *> *(^tonesDictionary)(void) = ^NSArray<NSD
             [ToneBarrierPlayer.context setPlayer:(id<ToneBarrierPlayerDelegate> _Nonnull)tones];
             [ToneBarrierPlayer.context createAudioBufferWithFormat:[self->_mixerNode outputFormatForBus:0] completionBlock:^(AVAudioPCMBuffer * _Nonnull buffer1, AVAudioPCMBuffer * _Nonnull buffer2, PlayToneCompletionBlock playToneCompletionBlock) {
                 [self->_playerOneNode scheduleBuffer:buffer1 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
-                    //                    if (callbackType == AVAudioPlayerNodeCompletionDataPlayedBack)
-                    //                        playToneCompletionBlock();
+                    printf("Running 1...\n");
+                    playToneCompletionBlock();
+//                    [self->_playerTwoNode scheduleBuffer:buffer2 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataConsumed completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
+//                        printf("Running 2...\n");
+//                        playToneCompletionBlock();
+//                    }];
                 }];
                 
-                [self->_playerTwoNode scheduleBuffer:buffer2 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
-                    if (callbackType == AVAudioPlayerNodeCompletionDataPlayedBack)
-                        playToneCompletionBlock();
-                    //                NSLog(@"Calling playToneCompletionBlock 2...");
-                }];
+                
                 
             }];
         }
