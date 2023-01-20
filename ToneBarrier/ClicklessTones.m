@@ -79,7 +79,7 @@ static __inline__ CGFloat random_float_between(CGFloat a, CGFloat b) {
     static unsigned int fade_bit = 1;
     static AVAudioPCMBuffer * (^createAudioBuffer)(Fade[2], simd_double2x2);
     createAudioBuffer = ^ AVAudioPCMBuffer * (Fade fades[2], simd_double2x2 frequencies) {
-        static simd_double2x2 thetas, theta_increments, samples, frame_counts, split_frames;
+        static simd_double2x2 thetas, theta_increments, samples;
         AVAudioFrameCount frameCount = audioFormat.sampleRate;
         AVAudioPCMBuffer * pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:audioFormat frameCapacity:frameCount];
         pcmBuffer.frameLength = frameCount;
