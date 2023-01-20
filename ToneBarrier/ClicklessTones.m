@@ -88,16 +88,25 @@ static __inline__ CGFloat random_float_between(CGFloat a, CGFloat b) {
         theta_increments = matrix_scale(phase_angular_unit, frequencies);
         simd_double1 split_frame = (simd_double1)(random_float_between(0.125f, 0.875f));
         
-        simd_double2 durations = simd_make_double2(split_frame, 1.0 - split_frame);
+        simd_double2x2 durations = simd_matrix_from_rows(simd_make_double2(split_frame, 1.0 - split_frame),
+                                                         simd_make_double2(1.0 - split_frame, split_frame));
         for (AVAudioFrameCount frame = 0; frame < frameCount; frame++) {
-            samples = simd_matrix_from_rows(_simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[0])), _simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[1])));
-            samples = simd_matrix_from_rows(simd_make_double2((simd_double2)(samples.columns[0] * durations)), simd_make_double2((simd_double2)(samples.columns[1] * durations)));
+            simd_double1 normalized_index = LinearInterpolation(frame, frameCount);
+            samples = simd_matrix_from_rows(_simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[0])),
+                                            _simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[1])));
             
-            // TO-DO: Mix channels here
-            
+            simd_double2 a      = simd_make_double2((simd_double2)(samples.columns[0]) * simd_make_double2((simd_double2)durations.columns[0]));
+            simd_double2 b      = simd_make_double2((simd_double2)(samples.columns[1]) * simd_make_double2((simd_double2)durations.columns[1]));
+            simd_double2 ab_sum = _simd_sin_d2(a + b);
+            simd_double2 ab_sub = _simd_cos_d2(a - b);
+            simd_double2 ab_mul = ab_sum * ab_sub;
+            samples = simd_matrix_from_rows(simd_make_double2((simd_double2)((2.f * ab_mul) / 2.f) * simd_make_double2((simd_double2)durations.columns[1])),
+                                            simd_make_double2((simd_double2)((2.f * ab_mul) / 2.f) * simd_make_double2((simd_double2)durations.columns[0])));
             thetas = simd_add(thetas, theta_increments);
             for (AVAudioChannelCount channel_count = 0; channel_count < audioFormat.channelCount; channel_count++) {
                 pcmBuffer.floatChannelData[channel_count][frame] = samples.columns[channel_count][frame];
+                !(thetas.columns[channel_count][channel_count] > M_PI_SQR) && (thetas.columns[channel_count][channel_count] -= M_PI_SQR);
+                !(thetas.columns[channel_count][channel_count ^ 1] > M_PI_SQR) && (thetas.columns[channel_count][channel_count ^ 1] -= M_PI_SQR);
             }
         }
 
@@ -128,9 +137,9 @@ static __inline__ CGFloat random_float_between(CGFloat a, CGFloat b) {
         //            double normalized_index = LinearInterpolation(index, frameCount);
 //            double amplitude = NormalizedSineEaseInOut(normalized_index, amplitude_frequency);
 //            left_channel[index]  = fade(fade_bit, normalized_index, NormalizedSineEaseInOut(normalized_index, frequencyLeft)  * amplitude);
-//            right_channel[index] = fade((fade_bit ^ 1), normalized_index, NormalizedSineEaseInOut(normalized_index, frequencyRight) * amplitude); // fade((leading_fade == FadeOut) ? FadeIn : leading_fade, normalized_index, (SineEaseInOutFrequency(normalized_index, frequencyRight) * NormalizedSineEaseInOutAmplitude((1.0 - normalized_index), 1)));
-//        }
-//
+        //            right_channel[index] = fade((fade_bit ^ 1), normalized_index, NormalizedSineEaseInOut(normalized_index, frequencyRight) * amplitude); // fade((leading_fade == FadeOut) ? FadeIn : leading_fade, normalized_index, (SineEaseInOutFrequency(normalized_index, frequencyRight) * NormalizedSineEaseInOutAmplitude((1.0 - normalized_index), 1)));
+        //        }
+        //
         return pcmBuffer;
     };
     
@@ -140,7 +149,6 @@ static __inline__ CGFloat random_float_between(CGFloat a, CGFloat b) {
         createAudioBufferCompletionBlock(createAudioBuffer(fades[0], simd_matrix_from_rows(simd_make_double2([self->_distributor nextInt], [self->_distributor nextInt]), simd_make_double2([self->_distributor nextInt], [self->_distributor nextInt]))), //RandomFloatBetween(4, 6), RandomFloatBetween(4, 6))),
                                          createAudioBuffer(fades[1], simd_matrix_from_rows(simd_make_double2([self->_distributor nextInt], [self->_distributor nextInt]), simd_make_double2([self->_distributor nextInt], [self->_distributor nextInt]))), //RandomFloatBetween(4, 6), RandomFloatBetween(4, 6))),
                                          ^{
-            printf("fade_bit == %u\t\tfade_bit ^ 1 == %u\n", fade_bit, fade_bit ^ 1);
             block();
         });
     };
