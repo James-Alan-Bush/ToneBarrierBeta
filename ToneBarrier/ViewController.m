@@ -9,6 +9,12 @@
 #import "ToneGenerator.h"
 #import "AppDelegate.h"
 
+#import "ViewController.h"
+#import "ViewController+Signal.h"
+
+#import <objc/runtime.h>
+
+
 @import QuartzCore;
 @import CoreGraphics;
 @import AVKit;
@@ -31,7 +37,6 @@
 //@property (weak, nonatomic) IBOutlet UIImageView *playButton;
 @property (weak, nonatomic) IBOutlet AVRoutePickerView *routePickerVIew;
 
-@property (weak, nonatomic) IBOutlet UIButton *playButton;
 @property (weak, nonatomic) IBOutlet UIImageView *heartRateImage;
 
 //@property (assign) id toneBarrierPlayingObserver;
@@ -42,6 +47,7 @@
 {
     CAGradientLayer * gradient;
 }
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     
@@ -54,9 +60,18 @@
     [gradient setColors:@[(id)[UIColor blackColor].CGColor, (id)[UIColor colorWithRed:0.f green:0.f blue:0.f alpha:0.f].CGColor, (id)[UIColor blackColor].CGColor]];
     [self.view.layer addSublayer:gradient];
     
-    [self.playButton setImage:[UIImage systemImageNamed:@"stop"]  forState:UIControlStateSelected];
-    [self.playButton setImage:[UIImage systemImageNamed:@"play"]  forState:UIControlStateNormal];
-    [self.playButton setImage:[UIImage systemImageNamed:@"play.slash"] forState:UIControlStateDisabled];
+    [self.play_button setImage:[UIImage systemImageNamed:@"stop"]  forState:UIControlStateSelected];
+    [self.play_button setImage:[UIImage systemImageNamed:@"play"]  forState:UIControlStateNormal];
+    [self.play_button setImage:[UIImage systemImageNamed:@"play.slash"] forState:UIControlStateDisabled];
+    
+   condition_expr = ^ (UIButton * b){
+       return ^{
+           return (unsigned long)(b.state ^ UIControlStateNormal);
+       };
+   }(self.play_button);
+    
+    printf("condition == %s\n", (((condition_test = condition_eval((typeof(condition_expr) *)&condition_expr)))()) ? "TRUE" : "FALSE");
+   
     
     NSMutableDictionary<NSString *, id> * nowPlayingInfo = [[NSMutableDictionary alloc] initWithCapacity:4];
     [nowPlayingInfo setObject:@"ToneBarrier" forKey:MPMediaItemPropertyTitle];
@@ -73,7 +88,7 @@
     [_nowPlayingInfoCenter = [MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:(NSDictionary<NSString *,id> * _Nullable)nowPlayingInfo];
     
     MPRemoteCommandHandlerStatus (^remote_command_handler)(MPRemoteCommandEvent * _Nonnull) = ^ MPRemoteCommandHandlerStatus (MPRemoteCommandEvent * _Nonnull event) {
-        [self toggleToneGenerator:self->_playButton];
+        [self toggleToneGenerator:self->_play_button];
         return MPRemoteCommandHandlerStatusSuccess;
     };
     
@@ -87,6 +102,9 @@
     [[NSNotificationCenter defaultCenter] postNotificationName:UIDeviceBatteryLevelDidChangeNotification object:self];
     [self addStatusObservers];
     
+    
+    audio_engine_ref = audio_engine(audio_source(audio_renderer()));
+    [audio_engine_ref startAndReturnError:nil];
 }
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
@@ -174,7 +192,6 @@ typedef NS_ENUM(NSUInteger, HeartRateMonitorStatus) {
 //    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(toggleToneGenerator:) name:@"ToneBarrierPlayingNotification" object:nil];
     
 }
-
 
 static NSProcessInfoThermalState(^thermalState)(void) = ^NSProcessInfoThermalState(void)
 {
@@ -317,18 +334,8 @@ static NSDictionary<NSString *, id> * (^deviceStatus)(UIDevice *) = ^NSDictionar
 
 - (IBAction)toggleToneGenerator:(UIButton *)sender
 {
-//    dispatch_async(dispatch_get_main_queue(), ^{
-        [sender setSelected:^ BOOL { return ((![ToneGenerator.sharedGenerator.audioEngine isRunning] && [ToneGenerator.sharedGenerator start]) || [ToneGenerator.sharedGenerator stop]); }()];
-//    });
-    NSLog(@"Audio engine %@",
-          ([ToneGenerator.sharedGenerator.audioEngine isRunning])
-          ? @"is running" : @"is not running");
-//    dispatch_async(dispatch_get_main_queue(), ^{
-//        if (![ToneGenerator.sharedGenerator.audioEngine isRunning]) {
-//            [ToneGenerator.sharedGenerator start];
-//        } else if ([ToneGenerator.sharedGenerator.audioEngine isRunning]) {
-//            [ToneGenerator.sharedGenerator stp
-//    [self updateDeviceStatus];
+    [sender setSelected:^ BOOL { return ((![ToneGenerator.sharedGenerator.audioEngine isRunning] && [ToneGenerator.sharedGenerator start]) || [ToneGenerator.sharedGenerator stop]); }()];
+    printf("condition == %s\n", (condition_test()) ? "TRUE" : "FALSE");
 }
 
 - (void)handleInterruption:(NSNotification *)notification
@@ -349,7 +356,7 @@ static NSDictionary<NSString *, id> * (^deviceStatus)(UIDevice *) = ^NSDictionar
                 if (_wasPlaying)
                 {
                     [ToneGenerator.sharedGenerator stop];
-                    [self.playButton setImage:[UIImage systemImageNamed:@"pause"] forState:UIControlStateNormal];
+                    [self.play_button setImage:[UIImage systemImageNamed:@"pause"] forState:UIControlStateNormal];
                 }
             } else if (type == AVAudioSessionInterruptionTypeEnded)
             {
@@ -360,7 +367,7 @@ static NSDictionary<NSString *, id> * (^deviceStatus)(UIDevice *) = ^NSDictionar
                 if (_wasPlaying)
                 {
                     [ToneGenerator.sharedGenerator start];
-                    [self.playButton setImage:[UIImage systemImageNamed:@"play"] forState:UIControlStateNormal];
+                    [self.play_button setImage:[UIImage systemImageNamed:@"play"] forState:UIControlStateNormal];
                 }
 //                }
             }

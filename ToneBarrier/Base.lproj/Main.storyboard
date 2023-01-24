@@ -18,7 +18,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <imageView opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" alpha="0.14999999999999999" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" insetsLayoutMarginsFromSafeArea="NO" translatesAutoresizingMaskIntoConstraints="NO" id="p0y-QY-MZd">
-                                <rect key="frame" x="0.0" y="9" width="430" height="940.33333333333337"/>
+                                <rect key="frame" x="0.0" y="9" width="430" height="940.33333333333326"/>
                                 <color key="backgroundColor" systemColor="systemFillColor"/>
                                 <color key="tintColor" systemColor="systemBlueColor"/>
                                 <accessibility key="accessibilityConfiguration">
@@ -64,7 +64,7 @@
                         </constraints>
                     </view>
                     <connections>
-                        <outlet property="playButton" destination="CxI-Ah-rhD" id="dEG-a2-sDT"/>
+                        <outlet property="play_button" destination="CxI-Ah-rhD" id="BnU-Nr-n8N"/>
                         <outlet property="routePickerVIew" destination="bPx-NW-Wzl" id="rwq-YB-MsW"/>
                     </connections>
                 </viewController>

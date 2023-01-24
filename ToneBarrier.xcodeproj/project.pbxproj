@@ -7,9 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		B93226252973A79A001B6EF7 /* AVFAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B93226242973A79A001B6EF7 /* AVFAudio.framework */; };
 		B93226272973A7A8001B6EF7 /* AVRouting.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B93226262973A7A8001B6EF7 /* AVRouting.framework */; };
-		B93226292973A7DB001B6EF7 /* AVKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B93226282973A7DB001B6EF7 /* AVKit.framework */; };
 		B96C25B12865F0EA00A75975 /* ClicklessTones.m in Sources */ = {isa = PBXBuildFile; fileRef = B96C25AF2865F0EA00A75975 /* ClicklessTones.m */; };
 		B96C25B42865F1A400A75975 /* easing.c in Sources */ = {isa = PBXBuildFile; fileRef = B96C25B22865F1A400A75975 /* easing.c */; };
 		B9869C5C28672EE8004C4E18 /* ToneBarrierPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = B9869C5B28672EE8004C4E18 /* ToneBarrierPlayer.m */; };
@@ -30,6 +28,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		B90681F6297B52660007BCBD /* ViewController+Signal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ViewController+Signal.h"; sourceTree = "<group>"; };
 		B93226232973A516001B6EF7 /* ToneBarrier.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ToneBarrier.entitlements; sourceTree = "<group>"; };
 		B93226242973A79A001B6EF7 /* AVFAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFAudio.framework; path = System/Library/Frameworks/AVFAudio.framework; sourceTree = SDKROOT; };
 		B93226262973A7A8001B6EF7 /* AVRouting.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVRouting.framework; path = System/Library/Frameworks/AVRouting.framework; sourceTree = SDKROOT; };
@@ -72,9 +71,7 @@
 				B98823DD297626B700477516 /* AVRouting.framework in Frameworks */,
 				B98823E1297626B800477516 /* BackgroundTasks.framework in Frameworks */,
 				B98823DC297626B700477516 /* AVKit.framework in Frameworks */,
-				B93226252973A79A001B6EF7 /* AVFAudio.framework in Frameworks */,
 				B98823E0297626B800477516 /* AVFoundation.framework in Frameworks */,
-				B93226292973A7DB001B6EF7 /* AVKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -128,8 +125,9 @@
 				B99077E2285AD0AF004F494E /* SceneDelegate.m */,
 				B99077E4285AD0AF004F494E /* ViewController.h */,
 				B99077E5285AD0AF004F494E /* ViewController.m */,
-				B96C25B22865F1A400A75975 /* easing.c */,
+				B90681F6297B52660007BCBD /* ViewController+Signal.h */,
 				B96C25B32865F1A400A75975 /* easing.h */,
+				B96C25B22865F1A400A75975 /* easing.c */,
 				B96C25B02865F0EA00A75975 /* ClicklessTones.h */,
 				B96C25AF2865F0EA00A75975 /* ClicklessTones.m */,
 				B99077E7285AD0AF004F494E /* Main.storyboard */,

@@ -91,7 +91,7 @@ static __inline__ CGFloat random_float_between(CGFloat a, CGFloat b) {
         simd_double2x2 durations = simd_matrix_from_rows(simd_make_double2(split_frame, 1.0 - split_frame),
                                                          simd_make_double2(1.0 - split_frame, split_frame));
         for (AVAudioFrameCount frame = 0; frame < frameCount; frame++) {
-            simd_double1 normalized_index = LinearInterpolation(frame, frameCount);
+//            simd_double1 normalized_index = LinearInterpolation(frame, frameCount);
             samples = simd_matrix_from_rows(_simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[0])),
                                             _simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[1])));
             
@@ -102,44 +102,14 @@ static __inline__ CGFloat random_float_between(CGFloat a, CGFloat b) {
             simd_double2 ab_mul = ab_sum * ab_sub;
             samples = simd_matrix_from_rows(simd_make_double2((simd_double2)((2.f * ab_mul) / 2.f) * simd_make_double2((simd_double2)durations.columns[1])),
                                             simd_make_double2((simd_double2)((2.f * ab_mul) / 2.f) * simd_make_double2((simd_double2)durations.columns[0])));
-            thetas = simd_add(thetas, theta_increments);
+            thetas  = simd_add(thetas, theta_increments);
             for (AVAudioChannelCount channel_count = 0; channel_count < audioFormat.channelCount; channel_count++) {
                 pcmBuffer.floatChannelData[channel_count][frame] = samples.columns[channel_count][frame];
-                !(thetas.columns[channel_count][channel_count] > M_PI_SQR) && (thetas.columns[channel_count][channel_count] -= M_PI_SQR);
-                !(thetas.columns[channel_count][channel_count ^ 1] > M_PI_SQR) && (thetas.columns[channel_count][channel_count ^ 1] -= M_PI_SQR);
+                !(thetas.columns[channel_count ^ 1][channel_count] > M_PI_SQR) && (thetas.columns[channel_count ^ 1][channel_count] -= M_PI_SQR); //0 = 1 0 //1 = 0 1
+                !(thetas.columns[channel_count][channel_count ^ 1] > M_PI_SQR) && (thetas.columns[channel_count][channel_count ^ 1] -= M_PI_SQR); //0 = 0 1 //1 = 1 0
             }
         }
-
-        /*
-         double channel_swap = RandomFloatBetween(0.125f, 0.875f);
-         double * channel_swap_t = &channel_swap;
-         double a = sinf(left_channel_theta) * (1.0 - *channel_swap_t);
-         double b = sinf(right_channel_theta) * *channel_swap_t;
-         buffer_left[frame]  = (2.f * (sinf(a + b) * cosf(a - b))) / 2.f * (1.0 - *channel_swap_t);;
-         buffer_right[frame] = (2.f * (sinf(a + b) * cosf(a - b))) / 2.f * *channel_swap_t;;
-         */
         
-        
-//        theta_increments = frequencies;
-//        for (AVAudioFrameCount frame = 0; frame < frameCount; frame++)
-//        {
-//            samples = simd_make_float4(_simd_sin_f4(thetas));
-//            thetas += theta_increments;
-//            for (AVAudioChannelCount channel_count = 0; channel_count < audioFormat.channelCount; channel_count++) {
-//                pcmBuffer.floatChannelData[channel_count][frame] = samples[channel_count] * samples[channel_count + 2];
-//                !(thetas[channel_count] > M_PI_SQR) && (thetas[channel_count] -= M_PI_SQR);
-//                !(thetas[channel_count + 2] > M_PI_SQR) && (thetas[channel_count + 2] -= M_PI_SQR);
-//            }
-//        }
-        
-        //        for (int index = 0; index < frameCount; index++)
-        //        {
-        //            double normalized_index = LinearInterpolation(index, frameCount);
-//            double amplitude = NormalizedSineEaseInOut(normalized_index, amplitude_frequency);
-//            left_channel[index]  = fade(fade_bit, normalized_index, NormalizedSineEaseInOut(normalized_index, frequencyLeft)  * amplitude);
-        //            right_channel[index] = fade((fade_bit ^ 1), normalized_index, NormalizedSineEaseInOut(normalized_index, frequencyRight) * amplitude); // fade((leading_fade == FadeOut) ? FadeIn : leading_fade, normalized_index, (SineEaseInOutFrequency(normalized_index, frequencyRight) * NormalizedSineEaseInOutAmplitude((1.0 - normalized_index), 1)));
-        //        }
-        //
         return pcmBuffer;
     };
     

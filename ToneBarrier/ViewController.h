@@ -21,8 +21,13 @@
 #define min_amplitude 0.5f
 #define max_amplitude 1.0f
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface ViewController : UIViewController <AVRoutePickerViewDelegate, DeviceStatusInterfaceDelegate, ToneWaveRendererDelegate, UIGestureRecognizerDelegate>
 
 @property (strong, nonatomic) UIDevice * _Nullable device;
+@property (weak, nonatomic) IBOutlet UIButton *play_button;
+
+NS_ASSUME_NONNULL_END
 
 @end
