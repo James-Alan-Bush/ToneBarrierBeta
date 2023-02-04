@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="21507" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="9it-0F-OTs">
-    <device id="retina6_72" orientation="portrait" appearance="light"/>
+    <device id="retina5_5" orientation="portrait" appearance="light"/>
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21505"/>
         <capability name="Image references" minToolsVersion="12.0"/>
@@ -14,11 +14,11 @@
             <objects>
                 <viewController id="9it-0F-OTs" customClass="ViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="ajU-mF-TYi">
-                        <rect key="frame" x="0.0" y="0.0" width="430" height="932"/>
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="736"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <imageView opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" alpha="0.14999999999999999" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" insetsLayoutMarginsFromSafeArea="NO" translatesAutoresizingMaskIntoConstraints="NO" id="p0y-QY-MZd">
-                                <rect key="frame" x="0.0" y="9" width="430" height="940.33333333333326"/>
+                                <rect key="frame" x="0.0" y="-3.6666666666666856" width="414" height="744.33333333333348"/>
                                 <color key="backgroundColor" systemColor="systemFillColor"/>
                                 <color key="tintColor" systemColor="systemBlueColor"/>
                                 <accessibility key="accessibilityConfiguration">
@@ -27,7 +27,7 @@
                                 <imageReference key="image" image="waveform.path" catalog="system" symbolScale="large" renderingMode="template"/>
                             </imageView>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="CxI-Ah-rhD" userLabel="Play Button">
-                                <rect key="frame" x="-204.66666666666666" y="414.66666666666669" width="839.33333333333337" height="128.00000000000006"/>
+                                <rect key="frame" x="165.66666666666666" y="294.33333333333331" width="82.666666666666657" height="147.33333333333331"/>
                                 <color key="tintColor" systemColor="systemBlueColor"/>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain" image="play" catalog="system">
@@ -35,14 +35,14 @@
                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <color key="strokeColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                     </backgroundConfiguration>
-                                    <preferredSymbolConfiguration key="preferredSymbolConfigurationForImage" configurationType="pointSize" pointSize="96" weight="thin"/>
+                                    <preferredSymbolConfiguration key="preferredSymbolConfigurationForImage" configurationType="pointSize" pointSize="144" scale="large" weight="thin"/>
                                 </buttonConfiguration>
                                 <connections>
                                     <action selector="toggleToneGenerator:" destination="9it-0F-OTs" eventType="touchUpInside" id="XK5-vq-I5C"/>
                                 </connections>
                             </button>
                             <view opaque="NO" contentMode="scaleAspectFit" translatesAutoresizingMaskIntoConstraints="NO" id="bPx-NW-Wzl" customClass="AVRoutePickerView">
-                                <rect key="frame" x="-99.666666666666686" y="802" width="629.33333333333348" height="96"/>
+                                <rect key="frame" x="176" y="625.66666666666663" width="62" height="110.33333333333337"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <color key="tintColor" systemColor="systemBlueColor"/>
                             </view>
@@ -55,12 +55,13 @@
                             <constraint firstItem="bPx-NW-Wzl" firstAttribute="bottom" secondItem="czV-Br-Vf9" secondAttribute="bottom" id="AFd-6c-YoL"/>
                             <constraint firstItem="CxI-Ah-rhD" firstAttribute="centerX" secondItem="czV-Br-Vf9" secondAttribute="centerX" id="GFs-d2-wT1"/>
                             <constraint firstItem="CxI-Ah-rhD" firstAttribute="centerY" secondItem="czV-Br-Vf9" secondAttribute="centerY" id="LkY-TV-3FO"/>
+                            <constraint firstItem="CxI-Ah-rhD" firstAttribute="width" secondItem="ajU-mF-TYi" secondAttribute="width" multiplier="0.2" id="Q6v-ck-S6P"/>
                             <constraint firstItem="p0y-QY-MZd" firstAttribute="centerY" secondItem="czV-Br-Vf9" secondAttribute="centerY" id="aZH-tf-XZh"/>
                             <constraint firstItem="bPx-NW-Wzl" firstAttribute="width" secondItem="CxI-Ah-rhD" secondAttribute="width" multiplier="0.75" id="eK9-S9-Zjw"/>
                             <constraint firstItem="bPx-NW-Wzl" firstAttribute="centerX" secondItem="czV-Br-Vf9" secondAttribute="centerX" id="fFu-kY-2w1"/>
                             <constraint firstItem="p0y-QY-MZd" firstAttribute="centerX" secondItem="czV-Br-Vf9" secondAttribute="centerX" id="gt4-GH-CO7"/>
-                            <constraint firstItem="CxI-Ah-rhD" firstAttribute="width" secondItem="czV-Br-Vf9" secondAttribute="height" multiplier="1:1" id="pSC-d8-CRf"/>
                             <constraint firstItem="bPx-NW-Wzl" firstAttribute="height" secondItem="CxI-Ah-rhD" secondAttribute="height" multiplier="0.75" id="sxT-Ey-2bI"/>
+                            <constraint firstItem="CxI-Ah-rhD" firstAttribute="height" secondItem="ajU-mF-TYi" secondAttribute="height" multiplier="0.2" id="xVd-FT-gcN"/>
                         </constraints>
                     </view>
                     <connections>

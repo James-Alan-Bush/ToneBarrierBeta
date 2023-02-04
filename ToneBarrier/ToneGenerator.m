@@ -13,6 +13,7 @@
 #import "ToneGenerator.h"
 #import "ToneBarrierPlayer.h"
 #import "ClicklessTones.h"
+#import "SIMDTones.h"
 #import "FrequenciesPairs.h"
 #import "Frequencies.h"
 
@@ -330,22 +331,23 @@ NSArray<NSDictionary<NSString *, id> *> *(^tonesDictionary)(void) = ^NSArray<NSD
             NSLog(@"error: %@", error.localizedFailureReason);
         }
 
-//        if (self->_playerOneNode)
-//        {
+        if (self->_playerOneNode)
+        {
 //            ClicklessTones *tones = [[ClicklessTones alloc] init];
-//            [ToneBarrierPlayer.context setPlayer:(id<ToneBarrierPlayerDelegate> _Nonnull)tones];
-//            [ToneBarrierPlayer.context createAudioBufferWithFormat:[self->_mixerNode outputFormatForBus:0] completionBlock:^(AVAudioPCMBuffer * _Nonnull buffer1, AVAudioPCMBuffer * _Nonnull buffer2, PlayToneCompletionBlock playToneCompletionBlock) {
-//                [self->_playerOneNode scheduleBuffer:buffer1 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
+            SIMDTones * tones = [[SIMDTones alloc] init];
+            [ToneBarrierPlayer.context setPlayer:(id<ToneBarrierPlayerDelegate> _Nonnull)tones];
+            [ToneBarrierPlayer.context createAudioBufferWithFormat:[self->_mixerNode outputFormatForBus:0] completionBlock:^(AVAudioPCMBuffer * _Nonnull buffer1, AVAudioPCMBuffer * _Nonnull buffer2, PlayToneCompletionBlock playToneCompletionBlock) {
+                [self->_playerOneNode scheduleBuffer:buffer1 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
+                    playToneCompletionBlock();
+                }];
+//                [self->_playerTwoNode scheduleBuffer:buffer2 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataConsumed completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
 //                    playToneCompletionBlock();
 //                }];
-////                [self->_playerTwoNode scheduleBuffer:buffer2 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataConsumed completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
-////                    playToneCompletionBlock();
-////                }];
-//
-//                
-//                
-//            }];
-//        }
+
+                
+                
+            }];
+        }
     }
     return [ToneGenerator.sharedGenerator.audioEngine isRunning];
 }

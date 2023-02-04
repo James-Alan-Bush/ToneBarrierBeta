@@ -7,8 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B9092D612983330C006CD79C /* WanderingCode in Resources */ = {isa = PBXBuildFile; fileRef = B9092D602983330C006CD79C /* WanderingCode */; };
+		B928337E298EB8350013E30E /* SIMDTones.m in Sources */ = {isa = PBXBuildFile; fileRef = B928337D298EB8350013E30E /* SIMDTones.m */; };
 		B93226272973A7A8001B6EF7 /* AVRouting.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B93226262973A7A8001B6EF7 /* AVRouting.framework */; };
-		B96C25B12865F0EA00A75975 /* ClicklessTones.m in Sources */ = {isa = PBXBuildFile; fileRef = B96C25AF2865F0EA00A75975 /* ClicklessTones.m */; };
 		B96C25B42865F1A400A75975 /* easing.c in Sources */ = {isa = PBXBuildFile; fileRef = B96C25B22865F1A400A75975 /* easing.c */; };
 		B9869C5C28672EE8004C4E18 /* ToneBarrierPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = B9869C5B28672EE8004C4E18 /* ToneBarrierPlayer.m */; };
 		B9869C5F28672FAC004C4E18 /* ToneGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = B9869C5D28672FAC004C4E18 /* ToneGenerator.m */; };
@@ -28,7 +29,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		B90681F6297B52660007BCBD /* ViewController+Signal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ViewController+Signal.h"; sourceTree = "<group>"; };
+		B9092D602983330C006CD79C /* WanderingCode */ = {isa = PBXFileReference; lastKnownFileType = text; path = WanderingCode; sourceTree = "<group>"; };
+		B9092D622983332C006CD79C /* ViewController+Signal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "ViewController+Signal.h"; path = "ToneBarrier/ViewController+Signal.h"; sourceTree = "<group>"; wrapsLines = 0; };
+		B9092D65298438F4006CD79C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		B928337C298EB8350013E30E /* SIMDTones.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SIMDTones.h; sourceTree = "<group>"; };
+		B928337D298EB8350013E30E /* SIMDTones.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SIMDTones.m; sourceTree = "<group>"; };
 		B93226232973A516001B6EF7 /* ToneBarrier.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ToneBarrier.entitlements; sourceTree = "<group>"; };
 		B93226242973A79A001B6EF7 /* AVFAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFAudio.framework; path = System/Library/Frameworks/AVFAudio.framework; sourceTree = SDKROOT; };
 		B93226262973A7A8001B6EF7 /* AVRouting.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVRouting.framework; path = System/Library/Frameworks/AVRouting.framework; sourceTree = SDKROOT; };
@@ -37,6 +42,7 @@
 		B96C25B02865F0EA00A75975 /* ClicklessTones.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ClicklessTones.h; sourceTree = "<group>"; };
 		B96C25B22865F1A400A75975 /* easing.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = easing.c; sourceTree = "<group>"; };
 		B96C25B32865F1A400A75975 /* easing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = easing.h; sourceTree = "<group>"; };
+		B981D9A5298BFCF400400616 /* ViewController+AudioData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ViewController+AudioData.h"; sourceTree = "<group>"; wrapsLines = 0; };
 		B9869C5A28672EE8004C4E18 /* ToneBarrierPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ToneBarrierPlayer.h; sourceTree = "<group>"; };
 		B9869C5B28672EE8004C4E18 /* ToneBarrierPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ToneBarrierPlayer.m; sourceTree = "<group>"; };
 		B9869C5D28672FAC004C4E18 /* ToneGenerator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ToneGenerator.m; sourceTree = "<group>"; wrapsLines = 0; };
@@ -95,6 +101,9 @@
 		B99077D2285AD0AF004F494E = {
 			isa = PBXGroup;
 			children = (
+				B9092D65298438F4006CD79C /* README.md */,
+				B9092D622983332C006CD79C /* ViewController+Signal.h */,
+				B9092D602983330C006CD79C /* WanderingCode */,
 				B99077DD285AD0AF004F494E /* ToneBarrier */,
 				B99077DC285AD0AF004F494E /* Products */,
 				B9869C6328673755004C4E18 /* Frameworks */,
@@ -125,11 +134,13 @@
 				B99077E2285AD0AF004F494E /* SceneDelegate.m */,
 				B99077E4285AD0AF004F494E /* ViewController.h */,
 				B99077E5285AD0AF004F494E /* ViewController.m */,
-				B90681F6297B52660007BCBD /* ViewController+Signal.h */,
+				B981D9A5298BFCF400400616 /* ViewController+AudioData.h */,
 				B96C25B32865F1A400A75975 /* easing.h */,
 				B96C25B22865F1A400A75975 /* easing.c */,
 				B96C25B02865F0EA00A75975 /* ClicklessTones.h */,
 				B96C25AF2865F0EA00A75975 /* ClicklessTones.m */,
+				B928337C298EB8350013E30E /* SIMDTones.h */,
+				B928337D298EB8350013E30E /* SIMDTones.m */,
 				B99077E7285AD0AF004F494E /* Main.storyboard */,
 				B99077EC285AD0B0004F494E /* LaunchScreen.storyboard */,
 				B98903842973486E00BB3174 /* Assets.xcassets */,
@@ -199,6 +210,7 @@
 				B99077EE285AD0B0004F494E /* LaunchScreen.storyboard in Resources */,
 				B98903852973486E00BB3174 /* Assets.xcassets in Resources */,
 				B99077E9285AD0AF004F494E /* Main.storyboard in Resources */,
+				B9092D612983330C006CD79C /* WanderingCode in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -212,9 +224,9 @@
 				B96C25B42865F1A400A75975 /* easing.c in Sources */,
 				B99077E6285AD0AF004F494E /* ViewController.m in Sources */,
 				B99077E0285AD0AF004F494E /* AppDelegate.m in Sources */,
-				B96C25B12865F0EA00A75975 /* ClicklessTones.m in Sources */,
 				B99077F1285AD0B0004F494E /* main.m in Sources */,
 				B9869C5C28672EE8004C4E18 /* ToneBarrierPlayer.m in Sources */,
+				B928337E298EB8350013E30E /* SIMDTones.m in Sources */,
 				B99077E3285AD0AF004F494E /* SceneDelegate.m in Sources */,
 				B9869C62286733DA004C4E18 /* Frequencies.m in Sources */,
 				B9869C5F28672FAC004C4E18 /* ToneGenerator.m in Sources */,

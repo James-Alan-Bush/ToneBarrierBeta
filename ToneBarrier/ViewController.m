@@ -11,6 +11,7 @@
 
 #import "ViewController.h"
 #import "ViewController+Signal.h"
+#import "ViewController+AudioData.h"
 
 #import <objc/runtime.h>
 
@@ -51,6 +52,9 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
+    const uintptr_t (^generate)(void) = generator(1, 1, 1);
+    for (int i = 0; i < 10; i++) printf("i == %d\n", generate());
+    
     [self.routePickerVIew setActiveTintColor:[UIColor systemBlueColor]];
     [self.routePickerVIew setDelegate:(id<AVRoutePickerViewDelegate> _Nullable)self];
     
@@ -64,13 +68,13 @@
     [self.play_button setImage:[UIImage systemImageNamed:@"play"]  forState:UIControlStateNormal];
     [self.play_button setImage:[UIImage systemImageNamed:@"play.slash"] forState:UIControlStateDisabled];
     
-   condition_expr = ^ (UIButton * b){
-       return ^{
-           return (unsigned long)(b.state ^ UIControlStateNormal);
-       };
-   }(self.play_button);
-    
-    printf("condition == %s\n", (((condition_test = condition_eval((typeof(condition_expr) *)&condition_expr)))()) ? "TRUE" : "FALSE");
+//   condition_expr = ^ (UIButton * b) {
+//       return ^{
+//           return (unsigned long)(b.state ^ UIControlStateNormal);
+//       };
+//   }(self.play_button);
+//
+//    printf("condition == %s\n", (((condition_test = condition_eval((typeof(condition_expr) *)&condition_expr)))()) ? "TRUE" : "FALSE");
    
     
     NSMutableDictionary<NSString *, id> * nowPlayingInfo = [[NSMutableDictionary alloc] initWithCapacity:4];
@@ -103,8 +107,8 @@
     [self addStatusObservers];
     
     
-    audio_engine_ref = audio_engine(audio_source(audio_renderer()));
-    [audio_engine_ref startAndReturnError:nil];
+//    audio_engine_ref = audio_engine(audio_source(audio_renderer()));
+//    [audio_engine_ref startAndReturnError:nil];
 }
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
@@ -335,7 +339,7 @@ static NSDictionary<NSString *, id> * (^deviceStatus)(UIDevice *) = ^NSDictionar
 - (IBAction)toggleToneGenerator:(UIButton *)sender
 {
     [sender setSelected:^ BOOL { return ((![ToneGenerator.sharedGenerator.audioEngine isRunning] && [ToneGenerator.sharedGenerator start]) || [ToneGenerator.sharedGenerator stop]); }()];
-    printf("condition == %s\n", (condition_test()) ? "TRUE" : "FALSE");
+//    printf("condition == %s\n", (condition_test()) ? "TRUE" : "FALSE");
 }
 
 - (void)handleInterruption:(NSNotification *)notification
