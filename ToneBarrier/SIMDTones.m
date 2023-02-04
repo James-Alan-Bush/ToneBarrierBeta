@@ -99,7 +99,6 @@ float normalize(float unscaledNum, float minAllowed, float maxAllowed, float min
 double (^fade)(Fade, double, double) = ^double(Fade fadeType, double x, double freq_amp)
 {
     double fade_effect = freq_amp * ((fadeType == FadeIn) ? x : (1.0 - x));
-    
     return fade_effect;
 };
 
@@ -107,18 +106,22 @@ double (^fade)(Fade, double, double) = ^double(Fade fadeType, double x, double f
 {
     static unsigned int fade_bit = 1;
     static AVAudioPCMBuffer * (^createAudioBuffer)(Fade[2], simd_double2x2);
+    static AVAudioFrameCount split_frame;
+    static simd_double2x2 thetas, theta_increments, samples;
+    
     createAudioBuffer = ^ AVAudioPCMBuffer * (Fade fades[2], simd_double2x2 frequencies) {
-        static simd_double2x2 thetas, theta_increments, samples;
         AVAudioFrameCount frameCount = audioFormat.sampleRate;
         AVAudioPCMBuffer * pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:audioFormat frameCapacity:frameCount];
         pcmBuffer.frameLength = frameCount;
-        
+        simd_double1 split_frame = (simd_double1)(frameCount * (random_float_between(0.125f, 0.875f)));
+
+        simd_double2x2 phase_angular_units = simd_matrix_from_rows(simd_make_double2((simd_double1)(M_PI_SQR / split_frame), (simd_double1)(M_PI_SQR / (frameCount - split_frame))),
+                                                                   simd_make_double2((simd_double1)(M_PI_SQR / (frameCount - split_frame)), (simd_double1)(M_PI_SQR / split_frame)));
         simd_double1 phase_angular_unit = (simd_double1)(M_PI_SQR / frameCount);
         theta_increments = matrix_scale(phase_angular_unit, frequencies);
-        simd_double1 split_frame = (simd_double1)(random_float_between(0.125f, 0.875f));
         
-        simd_double2x2 durations = simd_matrix_from_rows(simd_make_double2(split_frame, 1.0 - split_frame),
-                                                         simd_make_double2(1.0 - split_frame, split_frame));
+        simd_double2x2 durations = simd_matrix_from_rows(simd_make_double2(split_frame, frameCount - split_frame),
+                                                         simd_make_double2(frameCount - split_frame, split_frame));
         for (AVAudioFrameCount frame = 0; frame < frameCount; frame++) {
 //            simd_double1 normalized_index = LinearInterpolation(frame, frameCount);
             samples = simd_matrix_from_rows(_simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[0])),
