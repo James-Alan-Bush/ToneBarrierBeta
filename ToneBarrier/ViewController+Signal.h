@@ -65,18 +65,17 @@ static simd_double2x2 frequencies, thetas, theta_increments, samples;
 static OSStatus (^generate_samples)(AVAudioFrameCount);
 static OSStatus (^(^sample_generator)(const AVAudioFrameCount *))(const AVAudioFrameCount) = ^ (const AVAudioFrameCount * samples_t) {
     void (^distribute)(simd_double2x2 *) = distributor([[GKMersenneTwisterRandomSource alloc] initWithSeed:time(nil)]);
+    static AVAudioFramePosition sample;
+    static AVAudioFramePosition * sample_t = &sample;
     return ^ OSStatus (AVAudioFrameCount frames) {
-        __block AVAudioFramePosition sample;
-        __block AVAudioFramePosition * sample_t = &sample;
-        
-        for (AVAudioFramePosition frame = 0; frame < frames; frame++, (*sample_t)++) {
-            (*sample_t = ((((*sample_t - *samples_t) >> (WORD_BIT - 1)) && (*sample_t ^ 0)) ^ 0));
+        for (AVAudioFramePosition frame = 0; frame < frames; frame++) {
+            *sample_t = -~((((*sample_t - *samples_t) >> (WORD_BIT - 1)) & (*sample_t ^ 0)) ^ 0);
             printf("Frame %lld out of %u frames\n", -~frame, frames);
             printf("Sampled %lld out of %u samples\n\n", *sample_t, *samples_t);
         }
         
         return (OSStatus)noErr;
-//        printf("Sampled %lld out of %u samples\n\n", *sample_t, *samples_t);
+        printf("Sampled %lld out of %u samples\n\n", *sample_t, *samples_t);
     };
 };
 
