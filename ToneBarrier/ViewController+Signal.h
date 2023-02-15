@@ -20,8 +20,6 @@ static __inline__ CGFloat random_float_between(CGFloat a, CGFloat b) {
     return a + (b - a) * ((CGFloat) random() / (CGFloat) RAND_MAX);
 }
 
-#define M_PI_SQR M_PI * 2.f
-
 static AVAudioFormat * (^audio_format)(void) = ^ AVAudioFormat * {
     static AVAudioFormat * audio_format_ref = nil;
     static dispatch_once_t onceToken;
@@ -32,44 +30,33 @@ static AVAudioFormat * (^audio_format)(void) = ^ AVAudioFormat * {
     return audio_format_ref;
 };
 
-static AVAudioEngine * audio_engine_ref = nil;
-static AVAudioEngine * (^audio_engine)(AVAudioSourceNode *) = ^(AVAudioSourceNode * audio_source) {
-    AVAudioEngine * audio_engine = [[AVAudioEngine alloc] init];
-    [audio_engine attachNode:audio_source];
-    [audio_engine connect:audio_source to:audio_engine.mainMixerNode format:audio_format()];
-    [audio_engine prepare];
-    
-    return audio_engine;
-};
-
-static AVAudioSourceNode * (^audio_source)(AVAudioSourceNodeRenderBlock) = ^ AVAudioSourceNode * (AVAudioSourceNodeRenderBlock audio_renderer) {
-    AVAudioSourceNode * source_node = [[AVAudioSourceNode alloc] initWithRenderBlock:audio_renderer];
-    
-    return source_node;
-};
-
-static int counter = 0;
-static void (^(^distributor)(GKMersenneTwisterRandomSource *))(simd_double2x2 *) = ^ (GKMersenneTwisterRandomSource * randomizer) {
-    static GKGaussianDistribution * distributor_ref = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        distributor_ref = [[GKGaussianDistribution alloc] initWithRandomSource:randomizer mean:(high_frequency / .75) deviation:low_frequency];
-    });
-    return ^ (simd_double2x2 * frequencies_t) {
-        printf("Distributed %d times\n", counter++);
-        (*frequencies_t) = simd_matrix_from_rows(simd_make_double2([distributor_ref nextInt], [distributor_ref nextInt]), simd_make_double2([distributor_ref nextInt], [distributor_ref nextInt]));
-    };
-};
+#define M_PI_SQR M_PI * 2.f
 
 static simd_double2x2 thetas, signal_samples;
 
 static OSStatus (^generate_samples)(AVAudioFrameCount, AudioBufferList * _Nonnull);
 static OSStatus (^(^sample_generator)(AVAudioFrameCount))(AVAudioFrameCount, AudioBufferList * _Nonnull) = ^ (AVAudioFrameCount samples) {
-    void (^distribute)(simd_double2x2 *) = distributor([[GKMersenneTwisterRandomSource alloc] initWithSeed:time(nil)]);
     static AVAudioFramePosition sample;
     static AVAudioFramePosition * sample_t = &sample;
+  
+    simd_double1 time;
+    simd_double1 * time_t = &time;
+    typedef simd_double1 normalized_time_ref[samples];
+    typeof(normalized_time_ref) normalized_time;
+    simd_double1 * normalized_time_ptr = &normalized_time[0];
     
-    GKMersenneTwisterRandomSource * randomizer = [[GKMersenneTwisterRandomSource alloc] initWithSeed:time(nil)];
+    // Make room for a block that processes frame before and after it is normalized between one and zero (the old min/max, new min/max, and old value are assumed)
+    for (*sample_t = 0; *sample_t < samples; *sample_t += 1) {
+        *(time_t) = 0.f + ((((*sample_t - 0.f) * (1.f - 0.f))) / (~-samples - 0.f));
+        *(normalized_time_ptr + *sample_t) = *(time_t);
+//        printf("%lld\tframes == %f == frames_t == %f\n", *sample_t, *(time_t), *(normalized_time_ptr + *sample_t));
+    }
+    
+//    for (*sample_t = 0; *sample_t < samples; *sample_t += 1) {
+//        printf("time == %f\n", *(normalized_time_ptr + *sample_t));
+//    }
+    
+    GKMersenneTwisterRandomSource * randomizer = [[GKMersenneTwisterRandomSource alloc] initWithSeed:0];
     GKGaussianDistribution * distributor = [[GKGaussianDistribution alloc] initWithRandomSource:randomizer mean:(high_frequency / .75) deviation:low_frequency];
     __block simd_double2x2 frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt], [distributor nextInt]), simd_make_double2([distributor nextInt], [distributor nextInt]));
     simd_double1 phase_angular_unit = (simd_double1)(M_PI_SQR / samples);
@@ -84,32 +71,21 @@ static OSStatus (^(^sample_generator)(AVAudioFrameCount))(AVAudioFrameCount, Aud
         AVAudioFramePosition frame = 0;
         AVAudioFramePosition * frame_t = &frame;
         for (; *frame_t < frames; (*frame_t)++) {
-            (*sample_t = -~(AVAudioFramePosition)((((*sample_t - samples) >> (WORD_BIT - 1)) & (*sample_t ^ (AVAudioFramePosition)nil)) ^ (AVAudioFramePosition)nil));
-            //            printf("\t\tSampled %lld out of %u samples\n\n", *sample_t, samples);
+            double normalized_time = fmax(fmin(*(normalized_time_ptr + (*sample_t = -~(AVAudioFramePosition)((((*sample_t - samples) >> (WORD_BIT - 1)) & (*sample_t ^ (AVAudioFramePosition)nil)) ^ (AVAudioFramePosition)nil))), 1.f), 0.f);
             signal_samples = simd_matrix_from_rows(_simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[0])),
                                                    _simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[1])));
-                        
-            //            signal_samples = simd_mul(signal_samples, durations);
-            
-            //            simd_double2 a      = simd_make_double2((simd_double2)(signal_samples.columns[0]) * simd_make_double2((simd_double2)durations.columns[0]));
-            //            simd_double2 b      = simd_make_double2((simd_double2)(signal_samples.columns[1]) * simd_make_double2((simd_double2)durations.columns[1]));
-            //            simd_double2 ab_sum = _simd_sin_d2(a + b);
-            //            simd_double2 ab_sub = _simd_cos_d2(a - b);
-            //            simd_double2 ab_mul = ab_sum * ab_sub;
-            //            signal_samples = simd_matrix_from_rows(simd_make_double2((simd_double2)((2.f * ab_mul) / 2.f) * simd_make_double2((simd_double2)durations.columns[1])),
-            //                                                   simd_make_double2((simd_double2)((2.f * ab_mul) / 2.f) * simd_make_double2((simd_double2)durations.columns[0])));
             thetas  = simd_add(thetas, theta_increments);
+            
             simd_double2 ab_sum = _simd_sin_d2(signal_samples.columns[0][0] + signal_samples.columns[0][1]);
-            simd_double2 ab_sub = _simd_cos_d2(signal_samples.columns[0][0] - signal_samples.columns[1][0]);
+            simd_double2 ab_sub = _simd_cos_d2(signal_samples.columns[0][0] - signal_samples.columns[0][1]);
             simd_double2 ab_mul = ab_sum * ab_sub;
-            *((Float32 *)((Float32 *)((outputData->mBuffers + 0))->mData) + *frame_t) = (ab_mul[0]); //signal_samples.columns[0][0] + signal_samples.columns[0][1]; //pcmBuffer.floatChannelData[channel_count][frame]
-            *((Float32 *)((Float32 *)((outputData->mBuffers + 1))->mData) + *frame_t) = (ab_mul[1]); //signal_samples.columns[1][0] + signal_samples.columns[1][1]; //pcmBuffer.floatChannelData[channel_count][frame]
+            *((Float32 *)((Float32 *)((outputData->mBuffers + 0))->mData) + *frame_t) = (ab_mul[0] * normalized_time); //signal_samples.columns[0][0] + signal_samples.columns[0][1]; //pcmBuffer.floatChannelData[channel_count][frame]
+            *((Float32 *)((Float32 *)((outputData->mBuffers + 1))->mData) + *frame_t) = (ab_mul[0] * (1.0 - normalized_time)); //signal_samples.columns[1][0] + signal_samples.columns[1][1]; //pcmBuffer.floatChannelData[channel_count][frame]
 //            for (AVAudioChannelCount channel_count = 0; channel_count < audio_format().channelCount; channel_count++) {
-//                *((Float32 *)((Float32 *)((outputData->mBuffers + channel_count))->mData) + *frame_t) = signal_samples.columns[channel_count][channel_count ^ 1]; //pcmBuffer.floatChannelData[channel_count][frame]
-                //                !(thetas.columns[channel_count ^ 1][channel_count] > M_PI_SQR) && (thetas.columns[channel_count ^ 1][channel_count] -= M_PI_SQR); //0 = 1 0 //1 = 0 1
-                //                !(thetas.columns[channel_count][channel_count ^ 1] > M_PI_SQR) && (thetas.columns[channel_count][channel_count ^ 1] -= M_PI_SQR); //0 = 0 1 //1 = 1 0
+//                !(thetas.columns[channel_count ^ 1][channel_count] > M_PI_SQR) && (thetas.columns[channel_count ^ 1][channel_count] -= M_PI_SQR); //0 = 1 0 //1 = 0 1
+//                !(thetas.columns[channel_count][channel_count ^ 1] > M_PI_SQR) && (thetas.columns[channel_count][channel_count ^ 1] -= M_PI_SQR); //0 = 0 1 //1 = 1 0
 //            }
-            //            printf("Frame %lld out of %u frames\n", -~frame, frames);
+//            //            printf("Frame %lld out of %u frames\n", -~frame, frames);
         }
         //        printf("\t\tSampled %lld out of %u samples\n\n", *sample_t, samples);
         
@@ -125,15 +101,39 @@ static OSStatus (^(^sample_generator)(AVAudioFrameCount))(AVAudioFrameCount, Aud
 };
 
 
-// (^ AVAudioFramePosition { printf("First...\n"); return 0; }())
 
-static AVAudioSourceNodeRenderBlock (^audio_renderer)(AVAudioFormat *) = ^ AVAudioSourceNodeRenderBlock (AVAudioFormat * audio_format) {
-    generate_samples = sample_generator(audio_format.sampleRate);
+static AVAudioSourceNodeRenderBlock (^audio_renderer)(void) = ^ AVAudioSourceNodeRenderBlock (void) {
+    generate_samples = sample_generator(audio_format().sampleRate);
     printf("--------\n\n\n");
     return ^OSStatus(BOOL * _Nonnull isSilence, const AudioTimeStamp * _Nonnull timestamp, AVAudioFrameCount frameCount, AudioBufferList * _Nonnull outputData) {
         return generate_samples(frameCount, outputData);
     };
 };
+
+
+
+static AVAudioSourceNode * (^audio_source)(AVAudioSourceNodeRenderBlock) = ^ AVAudioSourceNode * (AVAudioSourceNodeRenderBlock audio_renderer) {
+    AVAudioSourceNode * source_node = [[AVAudioSourceNode alloc] initWithRenderBlock:audio_renderer];
+    
+    return source_node;
+};
+
+static AVAudioEngine * audio_engine_ref = nil;
+static AVAudioEngine * (^audio_engine)(void) = ^{
+    AVAudioEngine * audio_engine = [[AVAudioEngine alloc] init];
+    AVAudioSourceNode * audio_source_ref = audio_source(audio_renderer());
+    [audio_engine attachNode:audio_source_ref];
+    [audio_engine connect:audio_source_ref to:audio_engine.mainMixerNode format:audio_format()];
+    [audio_engine prepare];
+    [audio_engine startAndReturnError:nil];
+    
+    return (audio_engine_ref = audio_engine);
+};
+
+
+
+
+// (^ AVAudioFramePosition { printf("First...\n"); return 0; }())
 
 
 
