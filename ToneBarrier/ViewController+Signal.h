@@ -22,38 +22,13 @@ static __inline__ CGFloat random_float_between(CGFloat a, CGFloat b) {
 
 #define M_PI_SQR M_PI * 2.f
 
-typedef unsigned long (^condition_expr)(void);
-typedef unsigned long (^condition_test)(void);
-typedef typeof(condition_test) (^condition_eval)(typeof(condition_expr) *);
-
-typeof(condition_expr) audio_control_state_expr;
-typeof(condition_eval) audio_control_state_eval;
-typeof(condition_test) audio_control_state_conditional;
-//                      /*
-//                       ------ Single/Composite Function <-- Single/Composite Condition ----------
-//                       */
-//
-//                      // Function block
-//                      static unsigned long (^(^function)(typeof(condition_eval) *))(void);
-//
-//
-//                      // Player node block
-//                      static void (^(^player)(typeof(AVAudioPCMBuffer * (^*/*buffer_t*/)(void))))(void);
-//                      // Buffer block
-//                      static AVAudioPCMBuffer * (^buffer)(void);
-//
-//                      // control block evaluates condition using condition block to run player node block, player node block calls control block when returns
-//                      // - the condition and player node blocks are a predicate-function
-//                      // - the predicate block calls the function block
-//                      // - the function block calls the predicate-function block
-//                      // - the control block executes the predicate-function when called
-//
 static AVAudioFormat * (^audio_format)(void) = ^ AVAudioFormat * {
     static AVAudioFormat * audio_format_ref = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         audio_format_ref = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:192000.f channels:(AVAudioChannelCount)2];
     });
+    
     return audio_format_ref;
 };
 
@@ -73,6 +48,7 @@ static AVAudioSourceNode * (^audio_source)(AVAudioSourceNodeRenderBlock) = ^ AVA
     return source_node;
 };
 
+
 static void (^(^distributor)(GKMersenneTwisterRandomSource *))(simd_double2x2 *) = ^ (GKMersenneTwisterRandomSource * randomizer) {
     static GKGaussianDistribution * distributor_ref = nil;
     static dispatch_once_t onceToken;
@@ -85,51 +61,63 @@ static void (^(^distributor)(GKMersenneTwisterRandomSource *))(simd_double2x2 *)
 };
 
 static simd_double2x2 frequencies, thetas, theta_increments, samples;
-//static void (^asdf)(simd_double2x2 *, simd_double1 *, simd_double2x2 *, simd_double1 *, simd_double2x2 *) = ^ (simd_double2x2 * frequencies_t, simd_double1 * phase_angular_unit_t, simd_double2x2 * theta_increments_t, simd_double1 * split_frame_t, simd_double2x2 * durations_t) {
-//    // frequencies_t
-//    phase_angular_unit = (simd_double1)(M_PI_SQR / audio_format().sampleRate);
-//    theta_increments = matrix_scale(phase_angular_unit, frequencies);
-//    simd_double1 split_frame = (simd_double1)(random_float_between(0.125f, 0.875f));
-//
-//    simd_double2x2 durations = simd_matrix_from_rows(simd_make_double2(split_frame, 1.0 - split_frame),
-//                                                     simd_make_double2(1.0 - split_frame, split_frame));
-//};
 
+static OSStatus (^generate_samples)(AVAudioFrameCount);
+static OSStatus (^(^sample_generator)(const AVAudioFrameCount *))(const AVAudioFrameCount) = ^ (const AVAudioFrameCount * samples_t) {
+    void (^distribute)(simd_double2x2 *) = distributor([[GKMersenneTwisterRandomSource alloc] initWithSeed:time(nil)]);
+    return ^ OSStatus (AVAudioFrameCount frames) {
+        __block AVAudioFramePosition sample;
+        __block AVAudioFramePosition * sample_t = &sample;
+        
+        for (AVAudioFramePosition frame = 0; frame < frames; frame++, (*sample_t)++) {
+            (*sample_t = ((((*sample_t - *samples_t) >> (WORD_BIT - 1)) && (*sample_t ^ 0)) ^ 0));
+            printf("Frame %lld out of %u frames\n", -~frame, frames);
+            printf("Sampled %lld out of %u samples\n\n", *sample_t, *samples_t);
+        }
+        
+        return (OSStatus)noErr;
+//        printf("Sampled %lld out of %u samples\n\n", *sample_t, *samples_t);
+    };
+};
+
+
+// (^ AVAudioFramePosition { printf("First...\n"); return 0; }())
 
 static AVAudioSourceNodeRenderBlock (^audio_renderer)(void) = ^ AVAudioSourceNodeRenderBlock {
-    GKMersenneTwisterRandomSource * randomizer = [[GKMersenneTwisterRandomSource alloc] initWithSeed:time(nil)];
-    GKGaussianDistribution * distributor_ref = [[GKGaussianDistribution alloc] initWithRandomSource:randomizer mean:(high_frequency / .75) deviation:low_frequency];
-//    AVAudioFrameCount frameCount = audio_format().sampleRate;
-//    AVAudioPCMBuffer * pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:audio_format() frameCapacity:frameCount];
-//    pcmBuffer.frameLength = frameCount;
-    frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt], [distributor nextInt]), simd_make_double2([distributor nextInt], [distributor nextInt]));
-    simd_double1 phase_angular_unit = (simd_double1)(M_PI_SQR / audio_format().sampleRate);
-    theta_increments = matrix_scale(phase_angular_unit, frequencies);
-    simd_double1 split_frame = (simd_double1)(random_float_between(0.125f, 0.875f));
+//    GKMersenneTwisterRandomSource * randomizer = [[GKMersenneTwisterRandomSource alloc] initWithSeed:time(nil)];
+//    GKGaussianDistribution * distributor = [[GKGaussianDistribution alloc] initWithRandomSource:randomizer mean:(high_frequency / .75) deviation:low_frequency];
+//    frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt], [distributor nextInt]), simd_make_double2([distributor nextInt], [distributor nextInt]));
+//    simd_double1 phase_angular_unit = (simd_double1)(M_PI_SQR / audio_format().sampleRate);
+//    theta_increments = matrix_scale(phase_angular_unit, frequencies);
+//    simd_double1 split_frame = (simd_double1)(random_float_between(0.125f, 0.875f));
+//    
+//    simd_double2x2 durations = simd_matrix_from_rows(simd_make_double2(split_frame, 1.0 - split_frame),
+//                                                     simd_make_double2(1.0 - split_frame, split_frame));
+//    
     
-    simd_double2x2 durations = simd_matrix_from_rows(simd_make_double2(split_frame, 1.0 - split_frame),
-                                                     simd_make_double2(1.0 - split_frame, split_frame));
     return ^OSStatus(BOOL * _Nonnull isSilence, const AudioTimeStamp * _Nonnull timestamp, AVAudioFrameCount frameCount, AudioBufferList * _Nonnull outputData) {
+        
+        
         //        printf("frameCount == %d\n", frameCount);
-        for (AVAudioFrameCount frame = 0; frame < frameCount; frame++) {
-                samples = simd_matrix_from_rows(_simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[0])),
-                                                _simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[1])));
-                
-                simd_double2 a      = simd_make_double2((simd_double2)(samples.columns[0]) * simd_make_double2((simd_double2)durations.columns[0]));
-                simd_double2 b      = simd_make_double2((simd_double2)(samples.columns[1]) * simd_make_double2((simd_double2)durations.columns[1]));
-                simd_double2 ab_sum = _simd_sin_d2(a + b);
-                simd_double2 ab_sub = _simd_cos_d2(a - b);
-                simd_double2 ab_mul = ab_sum * ab_sub;
-                samples = simd_matrix_from_rows(simd_make_double2((simd_double2)((2.f * ab_mul) / 2.f) * simd_make_double2((simd_double2)durations.columns[1])),
-                                                simd_make_double2((simd_double2)((2.f * ab_mul) / 2.f) * simd_make_double2((simd_double2)durations.columns[0])));
-                thetas  = simd_add(thetas, theta_increments);
-                for (AVAudioChannelCount channel_count = 0; channel_count < audio_format().channelCount; channel_count++) {
-                    *((Float32 *)((Float32 *)((outputData->mBuffers + channel_count))->mData) + frame) = samples.columns[channel_count][frame]; //pcmBuffer.floatChannelData[channel_count][frame]
-                    !(thetas.columns[channel_count ^ 1][channel_count] > M_PI_SQR) && (thetas.columns[channel_count ^ 1][channel_count] -= M_PI_SQR); //0 = 1 0 //1 = 0 1
-                    !(thetas.columns[channel_count][channel_count ^ 1] > M_PI_SQR) && (thetas.columns[channel_count][channel_count ^ 1] -= M_PI_SQR); //0 = 0 1 //1 = 1 0
-                }
-            }
-        return (OSStatus)noErr;
+//        for (AVAudioFrameCount frame = 0; frame < frameCount; frame++) {
+//                samples = simd_matrix_from_rows(_simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[0])),
+//                                                _simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[1])));
+//
+//                simd_double2 a      = simd_make_double2((simd_double2)(samples.columns[0]) * simd_make_double2((simd_double2)durations.columns[0]));
+//                simd_double2 b      = simd_make_double2((simd_double2)(samples.columns[1]) * simd_make_double2((simd_double2)durations.columns[1]));
+//                simd_double2 ab_sum = _simd_sin_d2(a + b);
+//                simd_double2 ab_sub = _simd_cos_d2(a - b);
+//                simd_double2 ab_mul = ab_sum * ab_sub;
+//                samples = simd_matrix_from_rows(simd_make_double2((simd_double2)((2.f * ab_mul) / 2.f) * simd_make_double2((simd_double2)durations.columns[1])),
+//                                                simd_make_double2((simd_double2)((2.f * ab_mul) / 2.f) * simd_make_double2((simd_double2)durations.columns[0])));
+//                thetas  = simd_add(thetas, theta_increments);
+//                for (AVAudioChannelCount channel_count = 0; channel_count < audio_format().channelCount; channel_count++) {
+//                    *((Float32 *)((Float32 *)((outputData->mBuffers + channel_count))->mData) + frame) = samples.columns[channel_count][frame]; //pcmBuffer.floatChannelData[channel_count][frame]
+//                    !(thetas.columns[channel_count ^ 1][channel_count] > M_PI_SQR) && (thetas.columns[channel_count ^ 1][channel_count] -= M_PI_SQR); //0 = 1 0 //1 = 0 1
+//                    !(thetas.columns[channel_count][channel_count ^ 1] > M_PI_SQR) && (thetas.columns[channel_count][channel_count ^ 1] -= M_PI_SQR); //0 = 0 1 //1 = 1 0
+//                }
+//            }
+        return generate_samples(frameCount);
     };
 };
 

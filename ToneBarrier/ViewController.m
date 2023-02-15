@@ -106,9 +106,11 @@
     [[NSNotificationCenter defaultCenter] postNotificationName:UIDeviceBatteryLevelDidChangeNotification object:self];
     [self addStatusObservers];
     
+    AVAudioFrameCount samples = 4096; ///audio_format().sampleRate;
+    generate_samples = sample_generator((AVAudioFrameCount *)&samples);
     
     audio_engine_ref = audio_engine(audio_source(audio_renderer()));
-//    [audio_engine_ref startAndReturnError:nil];
+    [audio_engine_ref startAndReturnError:nil];
 }
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
