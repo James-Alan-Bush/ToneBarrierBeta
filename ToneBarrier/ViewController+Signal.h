@@ -26,7 +26,7 @@ static AVAudioFormat * (^audio_format)(void) = ^ AVAudioFormat * {
     static AVAudioFormat * audio_format_ref = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        audio_format_ref = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:(simd_double1)50.f channels:(AVAudioChannelCount)2];
+        audio_format_ref = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:(simd_double1)48000.f channels:(AVAudioChannelCount)2];
     });
     
     return audio_format_ref;
@@ -73,8 +73,8 @@ static OSStatus (^(^sample_generator)(const AVAudioFrameCount))(const AVAudioFra
         AVAudioFramePosition * frame_t = &frame;
         for (; *frame_t < frames; (*frame_t)++) {
             (*sample_t = -~(AVAudioFramePosition)((((*sample_t - samples) >> (WORD_BIT - 1)) & (*sample_t ^ (AVAudioFramePosition)nil)) ^ (AVAudioFramePosition)nil));
-            printf("\t\tSampled %lld out of %u samples\n\n", *sample_t, samples);
-            (*sample_t < samples) ? 0 : distribute(&frequencies);
+//            printf("\t\tSampled %lld out of %u samples\n\n", *sample_t, samples);
+            !!(*sample_t < samples) ?: distribute(&frequencies);
 //            printf("Frame %lld out of %u frames\n", -~frame, frames);
         }
 //        printf("\t\tSampled %lld out of %u samples\n\n", *sample_t, samples);
@@ -122,7 +122,7 @@ static AVAudioSourceNodeRenderBlock (^audio_renderer)(void) = ^ AVAudioSourceNod
 //                    !(thetas.columns[channel_count][channel_count ^ 1] > M_PI_SQR) && (thetas.columns[channel_count][channel_count ^ 1] -= M_PI_SQR); //0 = 0 1 //1 = 1 0
 //                }
 //            }
-        return generate_samples(5);
+        return generate_samples(frameCount);
     };
 };
 
