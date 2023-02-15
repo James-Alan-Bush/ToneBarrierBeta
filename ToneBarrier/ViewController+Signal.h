@@ -26,7 +26,7 @@ static AVAudioFormat * (^audio_format)(void) = ^ AVAudioFormat * {
     static AVAudioFormat * audio_format_ref = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        audio_format_ref = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:8000.f channels:(AVAudioChannelCount)2];
+        audio_format_ref = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:(simd_double1)50.f channels:(AVAudioChannelCount)2];
     });
     
     return audio_format_ref;
@@ -48,7 +48,7 @@ static AVAudioSourceNode * (^audio_source)(AVAudioSourceNodeRenderBlock) = ^ AVA
     return source_node;
 };
 
-
+static int counter = 0;
 static void (^(^distributor)(GKMersenneTwisterRandomSource *))(simd_double2x2 *) = ^ (GKMersenneTwisterRandomSource * randomizer) {
     static GKGaussianDistribution * distributor_ref = nil;
     static dispatch_once_t onceToken;
@@ -56,23 +56,28 @@ static void (^(^distributor)(GKMersenneTwisterRandomSource *))(simd_double2x2 *)
         distributor_ref = [[GKGaussianDistribution alloc] initWithRandomSource:randomizer mean:(high_frequency / .75) deviation:low_frequency];
     });
     return ^ (simd_double2x2 * frequencies_t) {
+        printf("Distributed %d times\n", counter++);
         (*frequencies_t) = simd_matrix_from_rows(simd_make_double2([distributor_ref nextInt], [distributor_ref nextInt]), simd_make_double2([distributor_ref nextInt], [distributor_ref nextInt]));
     };
 };
 
 static simd_double2x2 frequencies, thetas, theta_increments, samples;
 
-static OSStatus (^generate_samples)(AVAudioFrameCount);
+static OSStatus (^generate_samples)(const AVAudioFrameCount);
 static OSStatus (^(^sample_generator)(const AVAudioFrameCount))(const AVAudioFrameCount) = ^ (const AVAudioFrameCount samples) {
     void (^distribute)(simd_double2x2 *) = distributor([[GKMersenneTwisterRandomSource alloc] initWithSeed:time(nil)]);
     static AVAudioFramePosition sample;
     static AVAudioFramePosition * sample_t = &sample;
-    return ^ OSStatus (AVAudioFrameCount frames) {
-        for (AVAudioFramePosition frame = 0; frame < frames; frame++) {
-            *sample_t = -~((((*sample_t - samples) >> (WORD_BIT - 1)) & (*sample_t ^ 0)) ^ 0);
-            printf("Frame %lld out of %u frames\n", -~frame, frames);
+    return ^ OSStatus (const AVAudioFrameCount frames) {
+        AVAudioFramePosition frame = 0;
+        AVAudioFramePosition * frame_t = &frame;
+        for (; *frame_t < frames; (*frame_t)++) {
+            (*sample_t = -~(AVAudioFramePosition)((((*sample_t - samples) >> (WORD_BIT - 1)) & (*sample_t ^ (AVAudioFramePosition)nil)) ^ (AVAudioFramePosition)nil));
+            printf("\t\tSampled %lld out of %u samples\n\n", *sample_t, samples);
+            (*sample_t < samples) ? 0 : distribute(&frequencies);
+//            printf("Frame %lld out of %u frames\n", -~frame, frames);
         }
-        printf("\t\tSampled %lld out of %u samples\n\n", *sample_t, samples);
+//        printf("\t\tSampled %lld out of %u samples\n\n", *sample_t, samples);
         return (OSStatus)noErr;
         
     };
