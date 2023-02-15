@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (nonnull SIMDTones *)simdToneGenerator;
 - (instancetype)init;
-- (void)createAudioBufferWithFormat:(AVAudioFormat *)audioFormat completionBlock:(CreateAudioBufferCompletionBlock)createAudioBufferCompletionBlock;
+- (void)scheduleAudioBufferWithFormat:(AVAudioFormat *)audioFormat completionBlock:(CreateAudioBufferCompletionBlock)createAudioBufferCompletionBlock;
 
 @end
 

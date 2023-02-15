@@ -98,7 +98,7 @@ static simd_double2x2 frequencies, thetas, theta_increments, samples;
 
 static AVAudioSourceNodeRenderBlock (^audio_renderer)(void) = ^ AVAudioSourceNodeRenderBlock {
     GKMersenneTwisterRandomSource * randomizer = [[GKMersenneTwisterRandomSource alloc] initWithSeed:time(nil)];
-    
+    GKGaussianDistribution * distributor_ref = [[GKGaussianDistribution alloc] initWithRandomSource:randomizer mean:(high_frequency / .75) deviation:low_frequency];
 //    AVAudioFrameCount frameCount = audio_format().sampleRate;
 //    AVAudioPCMBuffer * pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:audio_format() frameCapacity:frameCount];
 //    pcmBuffer.frameLength = frameCount;

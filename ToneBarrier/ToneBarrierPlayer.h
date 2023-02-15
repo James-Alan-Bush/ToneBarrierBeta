@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (assign) id<ToneBarrierPlayerDelegate> player;
 
-- (void)createAudioBufferWithFormat:(AVAudioFormat *)audioFormat completionBlock:(CreateAudioBufferCompletionBlock)createAudioBufferCompletionBlock;
+- (void)createAudioBufferWithFormat:(AVAudioFormat *)audioFormat completionBlock:(CreateAudioBufferCompletionBlock)createAudioBufferCompletionBlock;;
 
 @end
 

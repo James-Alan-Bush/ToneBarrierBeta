@@ -25,7 +25,7 @@ static ToneBarrierPlayer *context = NULL;
     return context;
 }
 
-- (void)createAudioBufferWithFormat:(AVAudioFormat *)audioFormat completionBlock:(CreateAudioBufferCompletionBlock)createAudioBufferCompletionBlock;
+- (void)createAudioBufferWithFormat:(AVAudioFormat *)audioFormat completionBlock:(CreateAudioBufferCompletionBlock)createAudioBufferCompletionBlock
 {
     [_player createAudioBufferWithFormat:audioFormat completionBlock:createAudioBufferCompletionBlock];
 }

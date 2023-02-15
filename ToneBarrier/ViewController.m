@@ -1,4 +1,4 @@
-//
+ //
 //  ViewController.m
 //  ToneBarrier
 //
@@ -107,7 +107,7 @@
     [self addStatusObservers];
     
     
-//    audio_engine_ref = audio_engine(audio_source(audio_renderer()));
+    audio_engine_ref = audio_engine(audio_source(audio_renderer()));
 //    [audio_engine_ref startAndReturnError:nil];
 }
 
