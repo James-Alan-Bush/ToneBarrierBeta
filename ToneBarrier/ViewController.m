@@ -106,8 +106,9 @@
     [[NSNotificationCenter defaultCenter] postNotificationName:UIDeviceBatteryLevelDidChangeNotification object:self];
     [self addStatusObservers];
     
-    audio_engine_ref = audio_engine(audio_source(audio_renderer()));
+    audio_engine_ref = audio_engine(audio_source(audio_renderer(audio_format())));
     [audio_engine_ref startAndReturnError:nil];
+//    [[AVAudioSession sharedInstance] setActive:YES error:nil];
 }
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
