@@ -44,25 +44,6 @@ static OSStatus (^(^sample_generator)(AVAudioFrameCount))(AVAudioFrameCount, Aud
     static AVAudioFramePosition sample;
     static AVAudioFramePosition * sample_t = &sample;
     
-    simd_double1 time;
-    simd_double1 * time_t = &time;
-    typedef simd_double1 normalized_time_ref[samples];
-    typeof(normalized_time_ref) normalized_time;
-    simd_double1 * normalized_time_ptr = &normalized_time[0];
-    
-    // Make room for a block that processes frame before and after it is normalized between one and zero (the old min/max, new min/max, and old value are assumed)
-    for (*sample_t = 0; *sample_t < samples; *sample_t += 1) {
-        *(time_t) = 0.f + ((((*sample_t - 0.f) * (1.f - 0.f))) / (samples - 0.f));
-        *(normalized_time_ptr + *sample_t) = *(time_t);
-        //        printf("%lld\tframes == %f == frames_t == %f\n", *sample_t, *(time_t), *(normalized_time_ptr + *sample_t));
-    }
-    
-    *sample_t = 0;
-    
-    //    for (*sample_t = 0; *sample_t < samples; *sample_t += 1) {
-    //        printf("time == %f\n", *(normalized_time_ptr + *sample_t));
-    //    }
-    
     GKMersenneTwisterRandomSource * randomizer = [[GKMersenneTwisterRandomSource alloc] initWithSeed:0];
     GKGaussianDistribution * distributor = [[GKGaussianDistribution alloc] initWithRandomSource:randomizer mean:(high_frequency / .75) deviation:low_frequency];
     __block simd_double2x2 frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt], [distributor nextInt]), simd_make_double2([distributor nextInt], [distributor nextInt]));
@@ -72,17 +53,17 @@ static OSStatus (^(^sample_generator)(AVAudioFrameCount))(AVAudioFrameCount, Aud
     return ^ OSStatus (AVAudioFrameCount frames, AudioBufferList * _Nonnull outputData) {
         AVAudioFramePosition frame = 0;
         AVAudioFramePosition * frame_t = &frame;
+        static simd_double1 time;
+        static simd_double1 * time_t = &time;
+        
         for (; *frame_t < frames; (*frame_t)++) {
             *time_t = 0.f + (((((*sample_t = -~(AVAudioFramePosition)((((*sample_t - samples) >> (WORD_BIT - 1)) & (*sample_t ^ (AVAudioFramePosition)nil)) ^ (AVAudioFramePosition)nil)) - 0.f) * (1.f - 0.f))) / (samples - 0.f));
             signal_samples = simd_matrix_from_rows(_simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[0])),
                                                    _simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[1])));
             thetas  = simd_add(thetas, theta_increments);
-            
-            simd_double2 ab_sum = _simd_sin_d2(signal_samples.columns[0][0] + signal_samples.columns[0][1]);
-            simd_double2 ab_sub = _simd_cos_d2(signal_samples.columns[0][0] - signal_samples.columns[0][1]);
-            simd_double2 ab_mul = ab_sum * ab_sub;
-            *((Float32 *)((Float32 *)((outputData->mBuffers + 0))->mData) + *frame_t) = (ab_mul[0] * *time_t); //pcmBuffer.floatChannelData[channel_count][frame]
-            *((Float32 *)((Float32 *)((outputData->mBuffers + 1))->mData) + *frame_t) = (ab_mul[1] * *time_t); //signal_samples.columns[1][0] + signal_samples.columns[1][1]; //pcmBuffer.floatChannelData[channel_count][frame]
+
+            *((Float32 *)((Float32 *)((outputData->mBuffers + 0))->mData) + *frame_t) = (signal_samples.columns[0][0] * *time_t); //pcmBuffer.floatChannelData[channel_count][frame]
+            *((Float32 *)((Float32 *)((outputData->mBuffers + 1))->mData) + *frame_t) = (signal_samples.columns[0][1] * (1.f - *time_t)); //signal_samples.columns[1][0] + signal_samples.columns[1][1]; //pcmBuffer.floatChannelData[channel_count][frame]
         }
         return ({ !(*sample_t < samples) && ({ (theta_increments = matrix_scale(phase_angular_unit, (frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt], [distributor nextInt]), simd_make_double2([distributor nextInt], [distributor nextInt]))))); (OSStatus)noErr; }); (OSStatus)noErr; });
     };
@@ -90,7 +71,6 @@ static OSStatus (^(^sample_generator)(AVAudioFrameCount))(AVAudioFrameCount, Aud
 
 static AVAudioSourceNodeRenderBlock (^audio_renderer)(void) = ^ AVAudioSourceNodeRenderBlock (void) {
     generate_samples = sample_generator(audio_format().sampleRate * audio_format().channelCount * 2);
-    printf("--------\n\n\n");
     return ^OSStatus(BOOL * _Nonnull isSilence, const AudioTimeStamp * _Nonnull timestamp, AVAudioFrameCount frameCount, AudioBufferList * _Nonnull outputData) {
         return generate_samples(frameCount, outputData);
     };
