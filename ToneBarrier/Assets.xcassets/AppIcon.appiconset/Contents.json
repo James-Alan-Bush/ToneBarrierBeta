@@ -1,9 +1,15 @@
 {
   "images" : [
     {
-      "filename" : "Waveform Symbol.png",
+      "filename" : "Waveform Symbol Opaque.png",
       "idiom" : "universal",
       "platform" : "ios",
+      "size" : "1024x1024"
+    },
+    {
+      "filename" : "Waveform Symbol Opaque 1.png",
+      "idiom" : "universal",
+      "platform" : "watchos",
       "size" : "1024x1024"
     }
   ],

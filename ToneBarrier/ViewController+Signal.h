@@ -20,6 +20,11 @@ static __inline__ CGFloat random_float_between(CGFloat a, CGFloat b) {
     return a + (b - a) * ((CGFloat) random() / (CGFloat) RAND_MAX);
 }
 
+static simd_double1 (^scale)(simd_double1, simd_double1, simd_double1, simd_double1, simd_double1) = ^ simd_double1 (simd_double1 val_old, simd_double1 min_new, simd_double1 max_new, simd_double1 min_old, simd_double1 max_old) {
+    simd_double1 val_new = min_new + ((((val_old - min_old) * (max_new - min_new))) / (max_old - min_old));
+    return val_new;
+};
+
 static AVAudioFormat * (^audio_format)(void) = ^ AVAudioFormat * {
     static AVAudioFormat * audio_format_ref = nil;
     static dispatch_once_t onceToken;
@@ -52,6 +57,8 @@ static OSStatus (^(^sample_generator)(AVAudioFrameCount))(AVAudioFrameCount, Aud
 //        printf("%lld\tframes == %f == frames_t == %f\n", *sample_t, *(time_t), *(normalized_time_ptr + *sample_t));
     }
     
+    *sample_t = 0;
+    
 //    for (*sample_t = 0; *sample_t < samples; *sample_t += 1) {
 //        printf("time == %f\n", *(normalized_time_ptr + *sample_t));
 //    }
@@ -71,7 +78,8 @@ static OSStatus (^(^sample_generator)(AVAudioFrameCount))(AVAudioFrameCount, Aud
         AVAudioFramePosition frame = 0;
         AVAudioFramePosition * frame_t = &frame;
         for (; *frame_t < frames; (*frame_t)++) {
-            double normalized_time = fmax(fmin(*(normalized_time_ptr + (*sample_t = -~(AVAudioFramePosition)((((*sample_t - samples) >> (WORD_BIT - 1)) & (*sample_t ^ (AVAudioFramePosition)nil)) ^ (AVAudioFramePosition)nil))), 1.f), 0.f);
+            ;
+            double normalized_time = 0.f + (((((*sample_t = -~(AVAudioFramePosition)((((*sample_t - samples) >> (WORD_BIT - 1)) & (*sample_t ^ (AVAudioFramePosition)nil)) ^ (AVAudioFramePosition)nil)) - 0.f) * (1.f - 0.f))) / (~-samples - 0.f));
             signal_samples = simd_matrix_from_rows(_simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[0])),
                                                    _simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[1])));
             thetas  = simd_add(thetas, theta_increments);
@@ -80,7 +88,7 @@ static OSStatus (^(^sample_generator)(AVAudioFrameCount))(AVAudioFrameCount, Aud
             simd_double2 ab_sub = _simd_cos_d2(signal_samples.columns[0][0] - signal_samples.columns[0][1]);
             simd_double2 ab_mul = ab_sum * ab_sub;
             *((Float32 *)((Float32 *)((outputData->mBuffers + 0))->mData) + *frame_t) = (ab_mul[0] * normalized_time); //signal_samples.columns[0][0] + signal_samples.columns[0][1]; //pcmBuffer.floatChannelData[channel_count][frame]
-            *((Float32 *)((Float32 *)((outputData->mBuffers + 1))->mData) + *frame_t) = (ab_mul[0] * (1.0 - normalized_time)); //signal_samples.columns[1][0] + signal_samples.columns[1][1]; //pcmBuffer.floatChannelData[channel_count][frame]
+            *((Float32 *)((Float32 *)((outputData->mBuffers + 1))->mData) + *frame_t) = (ab_mul[0] * normalized_time); //signal_samples.columns[1][0] + signal_samples.columns[1][1]; //pcmBuffer.floatChannelData[channel_count][frame]
 //            for (AVAudioChannelCount channel_count = 0; channel_count < audio_format().channelCount; channel_count++) {
 //                !(thetas.columns[channel_count ^ 1][channel_count] > M_PI_SQR) && (thetas.columns[channel_count ^ 1][channel_count] -= M_PI_SQR); //0 = 1 0 //1 = 0 1
 //                !(thetas.columns[channel_count][channel_count ^ 1] > M_PI_SQR) && (thetas.columns[channel_count][channel_count ^ 1] -= M_PI_SQR); //0 = 0 1 //1 = 1 0
