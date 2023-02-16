@@ -84,49 +84,39 @@ static OSStatus (^(^sample_generator)(AVAudioFrameCount))(AVAudioFrameCount, Aud
             *((Float32 *)((Float32 *)((outputData->mBuffers + 0))->mData) + *frame_t) = (ab_mul[0] * *time_t); //pcmBuffer.floatChannelData[channel_count][frame]
             *((Float32 *)((Float32 *)((outputData->mBuffers + 1))->mData) + *frame_t) = (ab_mul[1] * *time_t); //signal_samples.columns[1][0] + signal_samples.columns[1][1]; //pcmBuffer.floatChannelData[channel_count][frame]
         }
-        return !(*sample_t < samples) && ({ (theta_increments = matrix_scale(phase_angular_unit, (frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt], [distributor nextInt]), simd_make_double2([distributor nextInt], [distributor nextInt]))))); (OSStatus)noErr; });
+        return ({ !(*sample_t < samples) && ({ (theta_increments = matrix_scale(phase_angular_unit, (frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt], [distributor nextInt]), simd_make_double2([distributor nextInt], [distributor nextInt]))))); (OSStatus)noErr; }); (OSStatus)noErr; });
     };
 };
-    
-    
-    static AVAudioSourceNodeRenderBlock (^audio_renderer)(void) = ^ AVAudioSourceNodeRenderBlock (void) {
-        generate_samples = sample_generator(audio_format().sampleRate * audio_format().channelCount * 2);
-        printf("--------\n\n\n");
-        return ^OSStatus(BOOL * _Nonnull isSilence, const AudioTimeStamp * _Nonnull timestamp, AVAudioFrameCount frameCount, AudioBufferList * _Nonnull outputData) {
-            return generate_samples(frameCount, outputData);
-        };
+
+static AVAudioSourceNodeRenderBlock (^audio_renderer)(void) = ^ AVAudioSourceNodeRenderBlock (void) {
+    generate_samples = sample_generator(audio_format().sampleRate * audio_format().channelCount * 2);
+    printf("--------\n\n\n");
+    return ^OSStatus(BOOL * _Nonnull isSilence, const AudioTimeStamp * _Nonnull timestamp, AVAudioFrameCount frameCount, AudioBufferList * _Nonnull outputData) {
+        return generate_samples(frameCount, outputData);
     };
+};
+
+static AVAudioSourceNode * (^audio_source)(AVAudioSourceNodeRenderBlock) = ^ AVAudioSourceNode * (AVAudioSourceNodeRenderBlock audio_renderer) {
+    AVAudioSourceNode * source_node = [[AVAudioSourceNode alloc] initWithRenderBlock:audio_renderer];
     
+    return source_node;
+};
+
+static AVAudioEngine * audio_engine_ref = nil;
+static AVAudioEngine * (^audio_engine)(void) = ^{
+    AVAudioEngine * audio_engine = [[AVAudioEngine alloc] init];
+    AVAudioSourceNode * audio_source_ref = audio_source(audio_renderer());
+    [audio_engine attachNode:audio_source_ref];
+    [audio_engine connect:audio_source_ref to:audio_engine.mainMixerNode format:audio_format()];
+    [audio_engine prepare];
+    [[AVAudioSession sharedInstance] setActive:[audio_engine startAndReturnError:nil] error:nil];
     
-    
-    static AVAudioSourceNode * (^audio_source)(AVAudioSourceNodeRenderBlock) = ^ AVAudioSourceNode * (AVAudioSourceNodeRenderBlock audio_renderer) {
-        AVAudioSourceNode * source_node = [[AVAudioSourceNode alloc] initWithRenderBlock:audio_renderer];
-        
-        return source_node;
-    };
-    
-    static AVAudioEngine * audio_engine_ref = nil;
-    static AVAudioEngine * (^audio_engine)(void) = ^{
-        AVAudioEngine * audio_engine = [[AVAudioEngine alloc] init];
-        AVAudioSourceNode * audio_source_ref = audio_source(audio_renderer());
-        [audio_engine attachNode:audio_source_ref];
-        [audio_engine connect:audio_source_ref to:audio_engine.mainMixerNode format:audio_format()];
-        [audio_engine prepare];
-        [audio_engine startAndReturnError:nil];
-        
-        return (audio_engine_ref = audio_engine);
-    };
-    
-    
-    
-    
-    // (^ AVAudioFramePosition { printf("First...\n"); return 0; }())
-    
-    
-    
-    @interface ViewController ()
-    
-    @end
-    
-    NS_ASSUME_NONNULL_END
-    
+    return (audio_engine_ref = audio_engine);
+};
+
+@interface ViewController ()
+
+@end
+
+NS_ASSUME_NONNULL_END
+
