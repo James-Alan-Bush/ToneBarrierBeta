@@ -59,7 +59,7 @@ static AVAudioSourceNodeRenderBlock (^audio_renderer)(void) = ^ AVAudioSourceNod
         for (; *frame_t < frames; (*frame_t)++) {
             signal_samples = matrix_scale(({
                 *time_t = 0.f + (((((*sample_t = -~(AVAudioFramePosition)(((sample_conditional()) & (*sample_t ^ (AVAudioFramePosition)0)) ^ (AVAudioFramePosition)0)) - 0.f) * (1.f - 0.f))) / ((int)(audio_format().sampleRate * audio_format().channelCount * 2.f) - 0.f));
-                (!sample_conditional()) && ({ (frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt], 1.f), simd_make_double2([distributor nextInt], 1.f))); (OSStatus)noErr; });
+                (!sample_conditional()) && ({ (frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt], 1.f), simd_make_double2([distributor nextInt], 1.f))); *time_t; });
                 *time_t;
             }) * M_PI_SQR, frequencies);
             signal_samples = simd_matrix_from_rows(_simd_sin_d2(signal_samples.columns[0]),
