@@ -2,7 +2,7 @@
 //  ViewController+Signal.h
 //  ToneBarrier
 //
-//  Created by Xcode Developer on 1/20/23.
+//  Created by James Alan Bush on 1/20/23.
 //
 
 #import "ViewController.h"
