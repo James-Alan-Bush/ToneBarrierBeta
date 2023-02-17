@@ -36,49 +36,46 @@ static AVAudioFormat * (^audio_format)(void) = ^ AVAudioFormat * {
 };
 
 #define M_PI_SQR M_PI * 2.f
+#define M_PI_MID M_PI / 2.f
 
-static simd_double2x2 thetas, signal_samples;
-
-static OSStatus (^generate_samples)(AVAudioFrameCount, AudioBufferList * _Nonnull);
-static OSStatus (^(^sample_generator)(AVAudioFrameCount))(AVAudioFrameCount, AudioBufferList * _Nonnull) = ^ (AVAudioFrameCount samples) {
+static AVAudioSourceNodeRenderBlock (^audio_renderer)(void) = ^ AVAudioSourceNodeRenderBlock {
     static AVAudioFramePosition sample;
     static AVAudioFramePosition * sample_t = &sample;
+    static unsigned long (^sample_conditional)(void) = ^ unsigned long {
+        return (*sample_t - (int)(audio_format().sampleRate * audio_format().channelCount * 2.f)) >> (WORD_BIT - 1);
+    };
     
-    GKMersenneTwisterRandomSource * randomizer = [[GKMersenneTwisterRandomSource alloc] initWithSeed:0];
+    GKMersenneTwisterRandomSource * randomizer = [[GKMersenneTwisterRandomSource alloc] initWithSeed:(unsigned long)clock()];
     GKGaussianDistribution * distributor = [[GKGaussianDistribution alloc] initWithRandomSource:randomizer mean:(high_frequency / .75) deviation:low_frequency];
-    __block simd_double2x2 frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt], [distributor nextInt]), simd_make_double2([distributor nextInt], [distributor nextInt]));
-    simd_double1 phase_angular_unit = (simd_double1)(M_PI_SQR / samples);
-    __block simd_double2x2 theta_increments = matrix_scale(phase_angular_unit, frequencies);
+    __block simd_double2x2 frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt], 1.f), simd_make_double2([distributor nextInt], 1.f));
+    static simd_double2x2 thetas, signal_samples;
     
-    return ^ OSStatus (AVAudioFrameCount frames, AudioBufferList * _Nonnull outputData) {
+    return ^ OSStatus (BOOL * _Nonnull isSilence, const AudioTimeStamp * _Nonnull timestamp, AVAudioFrameCount frames, AudioBufferList * _Nonnull outputData) {
         AVAudioFramePosition frame = 0;
         AVAudioFramePosition * frame_t = &frame;
         static simd_double1 time;
         static simd_double1 * time_t = &time;
         
         for (; *frame_t < frames; (*frame_t)++) {
-            *time_t = 0.f + (((((*sample_t = -~(AVAudioFramePosition)((((*sample_t - samples) >> (WORD_BIT - 1)) & (*sample_t ^ (AVAudioFramePosition)nil)) ^ (AVAudioFramePosition)nil)) - 0.f) * (1.f - 0.f))) / (samples - 0.f));
-            signal_samples = simd_matrix_from_rows(_simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[0])),
-                                                   _simd_sin_d2(simd_make_double2((simd_double2)thetas.columns[1])));
-            thetas  = simd_add(thetas, theta_increments);
-
-            *((Float32 *)((Float32 *)((outputData->mBuffers + 0))->mData) + *frame_t) = (signal_samples.columns[0][0] * *time_t); //pcmBuffer.floatChannelData[channel_count][frame]
-            *((Float32 *)((Float32 *)((outputData->mBuffers + 1))->mData) + *frame_t) = (signal_samples.columns[0][1] * (1.f - *time_t)); //signal_samples.columns[1][0] + signal_samples.columns[1][1]; //pcmBuffer.floatChannelData[channel_count][frame]
+            signal_samples = matrix_scale(({
+                *time_t = 0.f + (((((*sample_t = -~(AVAudioFramePosition)(((sample_conditional()) & (*sample_t ^ (AVAudioFramePosition)0)) ^ (AVAudioFramePosition)0)) - 0.f) * (1.f - 0.f))) / ((int)(audio_format().sampleRate * audio_format().channelCount * 2.f) - 0.f));
+                (!sample_conditional()) && ({ (frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt], 1.f), simd_make_double2([distributor nextInt], 1.f))); (OSStatus)noErr; });
+                *time_t;
+            }) * M_PI_SQR, frequencies);
+            signal_samples = simd_matrix_from_rows(_simd_sin_d2(signal_samples.columns[0]),
+                                                   _simd_sin_d2(signal_samples.columns[1]));
+            *((Float32 *)((Float32 *)((outputData->mBuffers + 0))->mData) + *frame_t) = signal_samples.columns[0][0] * signal_samples.columns[0][1];
+            *((Float32 *)((Float32 *)((outputData->mBuffers + 1))->mData) + *frame_t) = signal_samples.columns[1][0] * signal_samples.columns[1][1];
         }
-        return ({ !(*sample_t < samples) && ({ (theta_increments = matrix_scale(phase_angular_unit, (frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt], [distributor nextInt]), simd_make_double2([distributor nextInt], [distributor nextInt]))))); (OSStatus)noErr; }); (OSStatus)noErr; });
-    };
-};
-
-static AVAudioSourceNodeRenderBlock (^audio_renderer)(void) = ^ AVAudioSourceNodeRenderBlock (void) {
-    generate_samples = sample_generator(audio_format().sampleRate * audio_format().channelCount * 2);
-    return ^OSStatus(BOOL * _Nonnull isSilence, const AudioTimeStamp * _Nonnull timestamp, AVAudioFrameCount frameCount, AudioBufferList * _Nonnull outputData) {
-        return generate_samples(frameCount, outputData);
+        
+        return (OSStatus)noErr;
     };
 };
 
 static AVAudioSourceNode * (^audio_source)(AVAudioSourceNodeRenderBlock) = ^ AVAudioSourceNode * (AVAudioSourceNodeRenderBlock audio_renderer) {
     AVAudioSourceNode * source_node = [[AVAudioSourceNode alloc] initWithRenderBlock:audio_renderer];
-    
+    [source_node setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmAuto];
+    [source_node setSourceMode:AVAudio3DMixingSourceModeAmbienceBed];
     return source_node;
 };
 
