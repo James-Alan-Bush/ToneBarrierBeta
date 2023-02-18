@@ -42,12 +42,14 @@ static AVAudioSourceNodeRenderBlock (^audio_renderer)(void) = ^ AVAudioSourceNod
     static AVAudioFramePosition sample;
     static AVAudioFramePosition * sample_t = &sample;
     static unsigned long (^sample_conditional)(void) = ^ unsigned long {
-        return (*sample_t - (int)(audio_format().sampleRate * audio_format().channelCount * 2.f)) >> (WORD_BIT - 1);
+        return (*sample_t - (int)(audio_format().sampleRate * audio_format().channelCount)) >> (WORD_BIT - 1);
     };
     
     GKMersenneTwisterRandomSource * randomizer = [[GKMersenneTwisterRandomSource alloc] initWithSeed:(unsigned long)clock()];
     GKGaussianDistribution * distributor = [[GKGaussianDistribution alloc] initWithRandomSource:randomizer mean:(high_frequency / .75) deviation:low_frequency];
-    __block simd_double2x2 frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt], 1.f), simd_make_double2([distributor nextInt], 1.f));
+    // frequencies[0][0] & [1][0] = signal; frequencies[-][1] & [1][1] =  amplitude
+    // Add tremolo effect to signal and triol effect to amplitude
+    __block simd_double2x2 frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt] * M_PI_SQR, M_PI), simd_make_double2([distributor nextInt] * M_PI_SQR, M_PI));
     static simd_double2x2 thetas, signal_samples;
     
     return ^ OSStatus (BOOL * _Nonnull isSilence, const AudioTimeStamp * _Nonnull timestamp, AVAudioFrameCount frames, AudioBufferList * _Nonnull outputData) {
@@ -58,10 +60,11 @@ static AVAudioSourceNodeRenderBlock (^audio_renderer)(void) = ^ AVAudioSourceNod
         
         for (; *frame_t < frames; (*frame_t)++) {
             signal_samples = matrix_scale(({
+                // TO-DO: Use sample_t before incrementing for both the time and frequencies calculations
                 *time_t = 0.f + (((((*sample_t = -~(AVAudioFramePosition)(((sample_conditional()) & (*sample_t ^ (AVAudioFramePosition)0)) ^ (AVAudioFramePosition)0)) - 0.f) * (1.f - 0.f))) / ((int)(audio_format().sampleRate * audio_format().channelCount * 2.f) - 0.f));
-                (!sample_conditional()) && ({ (frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt], 1.f), simd_make_double2([distributor nextInt], 1.f))); *time_t; });
+                (!sample_conditional()) && ({ (frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt] * M_PI_SQR, M_PI), simd_make_double2([distributor nextInt] * M_PI_SQR, M_PI))); *time_t; });
                 *time_t;
-            }) * M_PI_SQR, frequencies);
+            }), frequencies);
             signal_samples = simd_matrix_from_rows(_simd_sin_d2(signal_samples.columns[0]),
                                                    _simd_sin_d2(signal_samples.columns[1]));
             *((Float32 *)((Float32 *)((outputData->mBuffers + 0))->mData) + *frame_t) = signal_samples.columns[0][0] * signal_samples.columns[0][1];
