@@ -35,41 +35,57 @@ static AVAudioFormat * (^audio_format)(void) = ^ AVAudioFormat * {
     return audio_format_ref;
 };
 
-#define M_PI_SQR M_PI * 2.f
-#define M_PI_MID M_PI / 2.f
+#define M_PI_DBL M_PI * 2.f
+#define M_PI_HLF M_PI / 2.f
 
-static AVAudioSourceNodeRenderBlock (^audio_renderer)(void) = ^ AVAudioSourceNodeRenderBlock {
-    static AVAudioFramePosition sample;
-    static AVAudioFramePosition * sample_t = &sample;
-    static unsigned long (^sample_conditional)(void) = ^ unsigned long {
-        return (*sample_t - (int)(audio_format().sampleRate * audio_format().channelCount)) >> (WORD_BIT - 1);
-    };
-    
+// a = (M_PI * *time_t)
+// b = (M_PI_DBL * frequency * *time_t)
+// c = sin(a * tremolo_coeff)
+// d = sin(a ^ tremolo_exp)
+// amplitude = sin(a);
+// freq_sin = 2 * sin(b)
+// freq_cos = cos(b)
+// frequency = freq_sin * freq_cos
+// tremolo = c * d
+// envelope = amplitude * tremolo
+// signal = envelope * frequency
+
+static AVAudioSourceNodeRenderBlock (^audio_renderer)(AVAudioFrameCount) = ^ AVAudioSourceNodeRenderBlock (AVAudioFrameCount frame_count) {
     GKMersenneTwisterRandomSource * randomizer = [[GKMersenneTwisterRandomSource alloc] initWithSeed:(unsigned long)clock()];
     GKGaussianDistribution * distributor = [[GKGaussianDistribution alloc] initWithRandomSource:randomizer mean:(high_frequency / .75) deviation:low_frequency];
-    // frequencies[0][0] & [1][0] = signal; frequencies[-][1] & [1][1] =  amplitude
-    // Add tremolo effect to signal and triol effect to amplitude
-    __block simd_double2x2 frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt] * M_PI_SQR, M_PI), simd_make_double2([distributor nextInt] * M_PI_SQR, M_PI));
-    static simd_double2x2 thetas, signal_samples;
+    __block simd_double2x2 frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt] * M_PI_DBL, M_PI * (M_PI * 4.f)), simd_make_double2([distributor nextInt] * M_PI_DBL, M_PI * (M_PI * 4.f)));
     
-    return ^ OSStatus (BOOL * _Nonnull isSilence, const AudioTimeStamp * _Nonnull timestamp, AVAudioFrameCount frames, AudioBufferList * _Nonnull outputData) {
-        AVAudioFramePosition frame = 0;
-        AVAudioFramePosition * frame_t = &frame;
-        static simd_double1 time;
+    static AVAudioFramePosition   frame_position;
+    static AVAudioFramePosition * frame_position_t = &frame_position;
+    
+    return ^ OSStatus (BOOL *isSilence, const AudioTimeStamp *timestamp, AVAudioFrameCount frameCount, AudioBufferList *outputData) {
+        __block simd_double2x2 signal_samples;
+        
+        static simd_double1   time;
         static simd_double1 * time_t = &time;
         
-        for (; *frame_t < frames; (*frame_t)++) {
-            signal_samples = matrix_scale(({
-                // TO-DO: Use sample_t before incrementing for both the time and frequencies calculations
-                *time_t = 0.f + (((((*sample_t = -~(AVAudioFramePosition)(((sample_conditional()) & (*sample_t ^ (AVAudioFramePosition)0)) ^ (AVAudioFramePosition)0)) - 0.f) * (1.f - 0.f))) / ((int)(audio_format().sampleRate * audio_format().channelCount * 2.f) - 0.f));
-                (!sample_conditional()) && ({ (frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt] * M_PI_SQR, M_PI), simd_make_double2([distributor nextInt] * M_PI_SQR, M_PI))); *time_t; });
-                *time_t;
-            }), frequencies);
-            signal_samples = simd_matrix_from_rows(_simd_sin_d2(signal_samples.columns[0]),
-                                                   _simd_sin_d2(signal_samples.columns[1]));
-            *((Float32 *)((Float32 *)((outputData->mBuffers + 0))->mData) + *frame_t) = signal_samples.columns[0][0] * signal_samples.columns[0][1];
-            *((Float32 *)((Float32 *)((outputData->mBuffers + 1))->mData) + *frame_t) = signal_samples.columns[1][0] * signal_samples.columns[1][1];
-        }
+        AVAudioFramePosition   frame = 0;
+        AVAudioFramePosition * frame_t = &frame;
+        
+        do {
+            !(*frame_position_t ^ frame_count) && ^ AVAudioFramePosition {
+                frequencies = simd_matrix_from_rows(simd_make_double2([distributor nextInt], 1.f), simd_make_double2([distributor nextInt], 1.f));
+                return (*frame_position_t = 0);
+            }();
+            
+            (*frame_position_t ^ frame_count) && ^ AVAudioFramePosition {
+                signal_samples = matrix_scale((*time_t = 0.f + ((*frame_position_t - 0.f) * (1.f - 0.f)) / (~-frame_count - 0.f)), frequencies);
+                signal_samples = simd_matrix_from_rows(_simd_sinpi_d2(signal_samples.columns[0]),
+                                                       _simd_sinpi_d2(signal_samples.columns[1]));
+                *((Float32 *)((Float32 *)((outputData->mBuffers + 0))->mData) + *frame_t) = signal_samples.columns[0][0] * signal_samples.columns[0][1];
+                *((Float32 *)((Float32 *)((outputData->mBuffers + 1))->mData) + *frame_t) = signal_samples.columns[1][0] * signal_samples.columns[1][1];
+                
+                return (*frame_position_t)++;
+            }();
+        } while ((*frame_t)++ < frameCount);
+        
+//        printf("*frame_position_t  == %lld\n", *frame_position_t);
+//        printf("*time_t == %f\n", *time_t);
         
         return (OSStatus)noErr;
     };
@@ -85,7 +101,7 @@ static AVAudioSourceNode * (^audio_source)(AVAudioSourceNodeRenderBlock) = ^ AVA
 static AVAudioEngine * audio_engine_ref = nil;
 static AVAudioEngine * (^audio_engine)(void) = ^{
     AVAudioEngine * audio_engine = [[AVAudioEngine alloc] init];
-    AVAudioSourceNode * audio_source_ref = audio_source(audio_renderer());
+    AVAudioSourceNode * audio_source_ref = audio_source(audio_renderer(audio_format().sampleRate * audio_format().channelCount));
     [audio_engine attachNode:audio_source_ref];
     [audio_engine connect:audio_source_ref to:audio_engine.mainMixerNode format:audio_format()];
     [audio_engine prepare];
