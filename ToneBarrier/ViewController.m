@@ -52,8 +52,44 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    const uintptr_t (^generate)(void) = generator(1, 1, 1);
-    for (int i = 0; i < 10; i++) printf("i == %d\n", generate());
+    
+    // Iterate an array of predicated-function blocks...
+    //
+//    typedef typeof(unsigned long(^)(unsigned long)) blk;
+//    typedef typeof(unsigned long(^*)(unsigned long)) blk_t;
+//    blk blk_a;
+//    __block blk_t blka_t = &blk_a;
+//    blk blk_b;
+//    __block blk_t blkb_t = &blk_b;
+//    blk blk_c;
+//    const blk_t blkc_t = &blk_c;
+//    
+//    __block unsigned long count = 5;
+//    count = ~(1 << (count + 1));
+//    
+//    blk_a = ^ unsigned long (unsigned long counter) {
+//        printf("blk_a counter == %lu\n", ({ (unsigned long)(floor(log2(counter))); }));
+//        return (unsigned long)(*blkb_t)((((counter >> 1) & 1UL) ^ (0 - count)));
+//    };
+//    
+//    blk_b = ^ unsigned long (unsigned long counter) {
+//        printf("blk_b counter == %lu\n", ({ (unsigned long)(floor(log2(counter))); }));
+//        return (unsigned long)(*blka_t)((((counter >> 1) & 1UL) ^ (0 - count)));
+//    };
+//    
+//    blk_c = ^ unsigned long (unsigned long counter) {
+//        int c =
+//        printf("blk_c counter == %lu\n", ({ (unsigned long)(floor(log2(counter))); }));
+//    
+//        return ((counter >>= 1UL) & 1UL) && ((counter % (1UL << 1) ^ (1UL << 0)) & (*blka_t)(counter)) | (*blkb_t)(counter);
+//    };
+//    
+//    
+//    
+//    (*blka_t)((unsigned long)(count));
+//    
+//    const uintptr_t (^generate)(void) = generator(1, 1, 1);
+//    for (int i = 0; i < 10; i++) printf("i == %d\n", generate());
     
     [self.routePickerVIew setActiveTintColor:[UIColor systemBlueColor]];
     [self.routePickerVIew setDelegate:(id<AVRoutePickerViewDelegate> _Nullable)self];
