@@ -20,6 +20,7 @@
 		B98823E0297626B800477516 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B98823DE297626B800477516 /* AVFoundation.framework */; };
 		B98823E1297626B800477516 /* BackgroundTasks.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B98823DF297626B800477516 /* BackgroundTasks.framework */; };
 		B98903852973486E00BB3174 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B98903842973486E00BB3174 /* Assets.xcassets */; };
+		B9898CF329A707A300E1D509 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B9898CF229A707A300E1D509 /* Accelerate.framework */; };
 		B99077E0285AD0AF004F494E /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B99077DF285AD0AF004F494E /* AppDelegate.m */; };
 		B99077E3285AD0AF004F494E /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B99077E2285AD0AF004F494E /* SceneDelegate.m */; };
 		B99077E6285AD0AF004F494E /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B99077E5285AD0AF004F494E /* ViewController.m */; };
@@ -54,6 +55,7 @@
 		B98823DE297626B800477516 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		B98823DF297626B800477516 /* BackgroundTasks.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = BackgroundTasks.framework; path = System/Library/Frameworks/BackgroundTasks.framework; sourceTree = SDKROOT; };
 		B98903842973486E00BB3174 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B9898CF229A707A300E1D509 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		B99077DB285AD0AF004F494E /* ToneBarrier.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ToneBarrier.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B99077DE285AD0AF004F494E /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		B99077DF285AD0AF004F494E /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -72,12 +74,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B93226272973A7A8001B6EF7 /* AVRouting.framework in Frameworks */,
+				B9898CF329A707A300E1D509 /* Accelerate.framework in Frameworks */,
 				B98823DB297626B700477516 /* AVFAudio.framework in Frameworks */,
+				B98823E0297626B800477516 /* AVFoundation.framework in Frameworks */,
+				B98823DC297626B700477516 /* AVKit.framework in Frameworks */,
+				B93226272973A7A8001B6EF7 /* AVRouting.framework in Frameworks */,
 				B98823DD297626B700477516 /* AVRouting.framework in Frameworks */,
 				B98823E1297626B800477516 /* BackgroundTasks.framework in Frameworks */,
-				B98823DC297626B700477516 /* AVKit.framework in Frameworks */,
-				B98823E0297626B800477516 /* AVFoundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -87,6 +90,7 @@
 		B9869C6328673755004C4E18 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				B9898CF229A707A300E1D509 /* Accelerate.framework */,
 				B98823DE297626B800477516 /* AVFoundation.framework */,
 				B98823DF297626B800477516 /* BackgroundTasks.framework */,
 				B93226282973A7DB001B6EF7 /* AVKit.framework */,
