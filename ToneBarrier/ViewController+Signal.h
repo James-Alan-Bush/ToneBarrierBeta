@@ -58,17 +58,28 @@ static __inline__ typeof(simd_double1(^)(simd_double1)) random_rescaler (simd_do
     };
 }
 
+//typeof(simd_double1(^)(simd_double1)) distribute_random;
+//typeof(simd_double1(^(* restrict))(simd_double1)) _Nullable distribute_random_t = &distribute_random;
+//static typeof(simd_double1(^)(simd_double1)) normalize_gaussian_distribution;
+//static typeof(simd_double1(^(* restrict))(simd_double1)) normalize_gaussian_distribution_t = &normalize_gaussian_distribution;
+//static __inline__ typeof(simd_double1(^)(simd_double1)) gaussian_distributor (simd_double1 mean, simd_double1 standard_deviation) {
+//    simd_double1 variance = (1.f / M_PI) * asin(sin(M_PI_HLF * mean));
+//    simd_double1 offset = (variance * 0.5f) * standard_deviation;
+//    *normalize_gaussian_distribution_t = ^ simd_double1 (simd_double1 d) { return d; }; //random_rescaler((mean - offset), (mean + offset), 0.f, 1.f);
+//    return ^ simd_double1 (simd_double1 t) {
+//        return (simd_double1)((*normalize_gaussian_distribution_t)(t));
+//    };
+//}
+
 typeof(simd_double1(^)(simd_double1)) distribute_random;
 typeof(simd_double1(^(* restrict))(simd_double1)) _Nullable distribute_random_t = &distribute_random;
-static __inline__ typeof(simd_double1(^)(simd_double1)) gaussian_distributor (simd_double1 mean, simd_double1 standard_deviation) {
-    simd_double1 variance = (1.f / M_PI) * asin(sin(M_PI_HLF * mean));
-    simd_double1 offset = (variance * 0.5f) * standard_deviation;
-    __block typeof(simd_double1(^)(simd_double1)) normalize = random_rescaler((mean - offset), (mean + offset), 0.f, 1.f);
-    return ^ (simd_double1 * offset_t, typeof(simd_double1(^(* restrict))(simd_double1)) normalize_t) {
+static __inline__ typeof(simd_double1(^)(simd_double1)) gaussian_distributor (simd_double1 mean, simd_double1 variance) {
+    static simd_double1 distributed_time;
+    return ^ (simd_double1 * distributed_time_t) {
         return ^ simd_double1 (simd_double1 time) {
-            return time; //(simd_double1)(time = ((*normalize_t)(time)));
+            return (simd_double1)(*distributed_time_t = exp(-(pow((time - mean), 2.0) / variance)));
         };
-    }(&offset, (typeof(simd_double1(^(* restrict))(simd_double1)))(&normalize));
+    }(&distributed_time);
 }
 
 typeof(simd_double1(^)(void)) generate_randomd48;
@@ -101,7 +112,7 @@ static AVAudioSourceNodeRenderBlock (^audio_renderer)(unsigned long) = ^ AVAudio
     
     generate_randomd48   = randomizerd48_generator();
     distribute_random    = gaussian_distributor(0.75f, 0.125f);
-    rescale_random       = random_rescaler(0.f, 1.f, low_frequency, high_frequency);
+    rescale_random       = random_rescaler(0.125f, 0.75f, low_frequency, high_frequency);
     random_generator randomize_frequency = ((randomizer_generator(generate_randomd48))(distribute_random))(rescale_random);
                          
     
