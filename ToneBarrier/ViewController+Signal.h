@@ -50,8 +50,10 @@ static AVAudioFormat * (^audio_format)(void) = ^ AVAudioFormat * {
 // envelope = amplitude * tremolo
 // signal = envelope * frequency
 
-typeof(simd_double1(^)(simd_double1)) rescale_random;
-typeof(simd_double1(^(* restrict))(simd_double1)) _Nullable rescale_random_t = &rescale_random;
+typeof(simd_double1(^)(simd_double1)) rescale_random_frequency;
+typeof(simd_double1(^(* restrict))(simd_double1)) _Nullable rescale_random_frequency_t = &rescale_random_frequency;
+typeof(simd_double1(^)(simd_double1)) rescale_random_duration;
+typeof(simd_double1(^(* restrict))(simd_double1)) _Nullable rescale_random_duration_t = &rescale_random_duration;
 static __inline__ typeof(simd_double1(^)(simd_double1)) random_rescaler (simd_double1 old_min, simd_double1 old_max, simd_double1 new_min, simd_double1 new_max) {
     return ^ simd_double1 (simd_double1 value) {
         return (simd_double1)(value = (new_max - new_min) * (value - old_min) / (old_max - old_min) + new_min);
@@ -71,11 +73,14 @@ static __inline__ typeof(simd_double1(^)(simd_double1)) random_rescaler (simd_do
 //    };
 //}
 
-typeof(simd_double1(^)(simd_double1)) distribute_random;
-typeof(simd_double1(^(* restrict))(simd_double1)) _Nullable distribute_random_t = &distribute_random;
+typeof(simd_double1(^)(simd_double1)) distribute_random_frequency;
+typeof(simd_double1(^(* restrict))(simd_double1)) _Nullable distribute_random_frequency_t = &distribute_random_frequency;
+typeof(simd_double1(^)(simd_double1)) distribute_random_duration;
+typeof(simd_double1(^(* restrict))(simd_double1)) _Nullable distribute_random_duration_t = &distribute_random_duration;
 static __inline__ typeof(simd_double1(^)(simd_double1)) gaussian_distributor (simd_double1 mean) {
     return ^ simd_double1 (simd_double1 time) {
-        return (simd_double1)(exp(-(pow((time - mean), 2.0))));
+        printf("distribute_random_frequency == %f\n", (time = (simd_double1)(exp(-(pow(((time * M_PI) - mean), 2.0))))));
+        return time;
     };
 }
 
@@ -107,11 +112,14 @@ static AVAudioSourceNodeRenderBlock (^audio_renderer)(unsigned long) = ^ AVAudio
 //    GKMersenneTwisterRandomSource * randomizer = [[GKMersenneTwisterRandomSource alloc] initWithSeed:(unsigned long)clock()];
 //    GKGaussianDistribution * distributor = [[GKGaussianDistribution alloc] initWithRandomSource:randomizer mean:(high_frequency / .75f) deviation:low_frequency];
     
-    generate_randomd48   = randomizerd48_generator();
-    distribute_random    = gaussian_distributor(0.75f);
-    rescale_random       = random_rescaler(0.f, 1.f, low_frequency, high_frequency);
-    random_generator randomize_frequency = ((randomizer_generator(generate_randomd48))(distribute_random))(rescale_random);
-                         
+    generate_randomd48          = randomizerd48_generator();
+    distribute_random_frequency = gaussian_distributor(0.925f);
+    distribute_random_duration  = gaussian_distributor(0.25f);
+    rescale_random_frequency    = random_rescaler(0.f, 1.f, low_frequency, high_frequency);
+    rescale_random_duration     = random_rescaler(0.f, 1.f, frame_count * 0.25f, frame_count * 0.8175f);
+    random_generator randomize_frequency = ((randomizer_generator(generate_randomd48))(distribute_random_frequency))(rescale_random_frequency);
+    random_generator randomize_duration = ((randomizer_generator(generate_randomd48))(distribute_random_duration))(rescale_random_duration);
+     
     
     static simd_double1 frequency_random[4];
     static simd_double2x2 frequencies, theta_increments;
@@ -121,7 +129,7 @@ static AVAudioSourceNodeRenderBlock (^audio_renderer)(unsigned long) = ^ AVAudio
     static unsigned long   frame_position;
     static unsigned long * frame_position_t = &frame_position;
 
-    static simd_double1 split_frame, distributed_split_frame;
+    static simd_double1 split_frame;
     static unsigned long split_frames[2];
     
     //    static simd_double1   time;
@@ -137,15 +145,20 @@ static AVAudioSourceNodeRenderBlock (^audio_renderer)(unsigned long) = ^ AVAudio
                     frequency_random[1] = randomize_frequency();//(simd_double1)random_float_between(low_frequency, high_frequency);
                     frequency_random[2] = randomize_frequency();//(simd_double1)random_float_between(low_frequency, high_frequency);
                     frequency_random[3] = randomize_frequency();//(simd_double1)random_float_between(low_frequency, high_frequency);
+
+                    for (int i = 0; i < 4; i++)
+                        printf("frequency == %f\n", frequency_random[i]);
+                    
                     frequencies = simd_matrix_from_rows(simd_make_double2(frequency_random[0],
                                                                           frequency_random[1]),
                                                         simd_make_double2(frequency_random[2],
                                                                           frequency_random[3]));
                     theta_increments = matrix_scale(phase_angular_unit, frequencies);
                     thetas = theta_increments;
-                    split_frame = randomize_frequency();
-                    split_frames[0] = frame_count * 0.25;//(frame_count * split_frame);
-                    split_frames[1] = frame_count * 0.75;//(frame_count * distributed_split_frame);
+                    split_frame = randomize_duration();
+                    split_frames[0] = split_frame;
+                    split_frames[1] = 1.f - split_frame;
+                    printf("split_frame == %f\n", split_frame);
                     return (*frame_position_t = 0);
                 }();
                 
