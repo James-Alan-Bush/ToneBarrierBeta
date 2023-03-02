@@ -73,13 +73,10 @@ static __inline__ typeof(simd_double1(^)(simd_double1)) random_rescaler (simd_do
 
 typeof(simd_double1(^)(simd_double1)) distribute_random;
 typeof(simd_double1(^(* restrict))(simd_double1)) _Nullable distribute_random_t = &distribute_random;
-static __inline__ typeof(simd_double1(^)(simd_double1)) gaussian_distributor (simd_double1 mean, simd_double1 variance) {
-    static simd_double1 distributed_time;
-    return ^ (simd_double1 * distributed_time_t) {
-        return ^ simd_double1 (simd_double1 time) {
-            return (simd_double1)(*distributed_time_t = exp(-(pow((time - mean), 2.0) / variance)));
-        };
-    }(&distributed_time);
+static __inline__ typeof(simd_double1(^)(simd_double1)) gaussian_distributor (simd_double1 mean) {
+    return ^ simd_double1 (simd_double1 time) {
+        return (simd_double1)(exp(-(pow((time - mean), 2.0))));
+    };
 }
 
 typeof(simd_double1(^)(void)) generate_randomd48;
@@ -107,12 +104,12 @@ static simd_double1 (^(^(^(^randomizer_generator)(simd_double1(^)(void)))(simd_d
 };
 
 static AVAudioSourceNodeRenderBlock (^audio_renderer)(unsigned long) = ^ AVAudioSourceNodeRenderBlock (unsigned long frame_count) {
-    GKMersenneTwisterRandomSource * randomizer = [[GKMersenneTwisterRandomSource alloc] initWithSeed:(unsigned long)clock()];
-    GKGaussianDistribution * distributor = [[GKGaussianDistribution alloc] initWithRandomSource:randomizer mean:(high_frequency / .75f) deviation:low_frequency];
+//    GKMersenneTwisterRandomSource * randomizer = [[GKMersenneTwisterRandomSource alloc] initWithSeed:(unsigned long)clock()];
+//    GKGaussianDistribution * distributor = [[GKGaussianDistribution alloc] initWithRandomSource:randomizer mean:(high_frequency / .75f) deviation:low_frequency];
     
     generate_randomd48   = randomizerd48_generator();
-    distribute_random    = gaussian_distributor(0.75f, 0.125f);
-    rescale_random       = random_rescaler(0.125f, 0.75f, low_frequency, high_frequency);
+    distribute_random    = gaussian_distributor(0.75f);
+    rescale_random       = random_rescaler(0.f, 1.f, low_frequency, high_frequency);
     random_generator randomize_frequency = ((randomizer_generator(generate_randomd48))(distribute_random))(rescale_random);
                          
     
